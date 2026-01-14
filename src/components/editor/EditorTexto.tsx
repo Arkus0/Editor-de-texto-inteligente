@@ -4,6 +4,13 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
+import Highlight from '@tiptap/extension-highlight'
+import Subscript from '@tiptap/extension-subscript'
+import Superscript from '@tiptap/extension-superscript'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -13,8 +20,19 @@ import { toast } from 'sonner'
 import { stopwords } from '@/lib/stopwords'
 import { useSidebarStore } from '@/store/useSidebarStore'
 import { sociDictionary } from '@/lib/dictionary'
+import { EditorToolbar } from './EditorToolbar'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 type Repetition = { word: string; count: number }
+
+type Evaluation = {
+    nota: number;
+    comentario_general: string;
+    puntos_fuertes: string[];
+    puntos_mejora: string[];
+    analisis_critico: string;
+}
 
 export default function EditorTexto() {
   const { setDefinition } = useSidebarStore();
@@ -36,16 +54,46 @@ export default function EditorTexto() {
   const [connectors, setConnectors] = useState<string[]>([])
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(false)
 
+  // Evaluation State
+  const [isEvaluationOpen, setIsEvaluationOpen] = useState(false)
+  const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
+  const [isEvaluating, setIsEvaluating] = useState(false)
+
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        bulletList: {
+            keepMarks: true,
+            keepAttributes: false,
+        },
+        orderedList: {
+            keepMarks: true,
+            keepAttributes: false,
+        },
+        // We use our own Underline extension configuration if needed,
+        // but StarterKit already includes it. Let's make sure it's enabled.
+        underline: false,
+      }),
+      Underline,
       Placeholder.configure({
         placeholder: 'Escribe tu texto sociológico aquí...',
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Highlight.configure({
+        multicolor: true,
+      }),
+      Subscript,
+      Superscript,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
       }),
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-lg prose-stone dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-200px)] font-serif',
+        class: 'prose prose-lg prose-stone dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-200px)] font-serif px-8 py-4',
       },
     },
     content: '<p>La sociedad moderna se caracteriza por...</p>',
@@ -95,6 +143,44 @@ export default function EditorTexto() {
     a.download = 'socioflow-documento.html';
     a.click();
     toast.success("Documento descargado");
+  }
+
+  const handleEvaluate = async () => {
+    if (!editor) return;
+    const text = editor.getText();
+
+    if (text.length < 50) {
+        toast.warning("El texto es muy corto para evaluar.");
+        return;
+    }
+
+    setIsEvaluationOpen(true);
+    setIsEvaluating(true);
+    setEvaluation(null);
+
+    try {
+        const res = await fetch('/api/evaluar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+        })
+
+        if (!res.ok) {
+             const err = await res.json();
+             throw new Error(err.error || 'Error en la evaluación');
+        }
+
+        const data = await res.json();
+        setEvaluation(data);
+
+    } catch (error) {
+        toast.error("No se pudo evaluar el texto", {
+            description: error instanceof Error ? error.message : "Inténtalo de nuevo más tarde."
+        });
+        setIsEvaluationOpen(false); // Close if error
+    } finally {
+        setIsEvaluating(false);
+    }
   }
 
   const handleFormalize = async () => {
@@ -449,13 +535,120 @@ export default function EditorTexto() {
       )}
 
       {/* Editor Content */}
-      <div className="relative bg-white dark:bg-zinc-950 p-8 md:p-12 min-h-screen shadow-sm border-x border-zinc-100 dark:border-zinc-900 mx-auto max-w-3xl">
-        <div className="absolute top-4 right-4 print:hidden">
+      <div className="relative bg-white dark:bg-zinc-950 min-h-screen shadow-sm border-x border-zinc-100 dark:border-zinc-900 mx-auto max-w-4xl flex flex-col">
+         {/* Toolbar */}
+         <EditorToolbar editor={editor} />
+
+        <div className="absolute top-2 right-4 print:hidden z-20 flex gap-2">
+            <Dialog open={isEvaluationOpen} onOpenChange={setIsEvaluationOpen}>
+                <DialogTrigger asChild>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEvaluate}
+                        className="h-8 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 font-medium"
+                    >
+                        <GraduationCap className="w-4 h-4 mr-2" />
+                        Evaluar Trabajo
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="font-serif text-2xl text-indigo-900 flex items-center gap-2">
+                            <GraduationCap className="w-6 h-6" />
+                            Evaluación del Profesor
+                        </DialogTitle>
+                        <DialogDescription>
+                            Análisis automático de estructura, tono y contenido sociológico.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <ScrollArea className="flex-1 pr-4">
+                        {isEvaluating ? (
+                            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+                                <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+                                <p className="text-zinc-500 text-lg font-medium animate-pulse">Leyendo tu trabajo...</p>
+                                <div className="space-y-2 w-full max-w-sm">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-3/4 mx-auto" />
+                                </div>
+                            </div>
+                        ) : evaluation ? (
+                            <div className="space-y-6 py-4">
+                                {/* Nota */}
+                                <div className="flex items-center justify-between bg-zinc-50 p-4 rounded-xl border border-zinc-100">
+                                    <div className="text-zinc-600 font-medium">Calificación Global</div>
+                                    <div className={`text-4xl font-bold font-serif ${evaluation.nota >= 7 ? 'text-green-600' : evaluation.nota >= 5 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                        {evaluation.nota}<span className="text-lg text-zinc-400 font-sans">/10</span>
+                                    </div>
+                                </div>
+
+                                {/* Comentario General */}
+                                <div className="space-y-2">
+                                    <h4 className="font-bold text-zinc-800 flex items-center gap-2">
+                                        <Search className="w-4 h-4 text-indigo-500" />
+                                        Comentario General
+                                    </h4>
+                                    <p className="text-zinc-700 leading-relaxed bg-white p-3 rounded-md border border-zinc-100 shadow-sm text-sm">
+                                        {evaluation.comentario_general}
+                                    </p>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {/* Puntos Fuertes */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-bold text-green-700 text-sm uppercase tracking-wide flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                                            Puntos Fuertes
+                                        </h4>
+                                        <ul className="space-y-2">
+                                            {evaluation.puntos_fuertes.map((pf, i) => (
+                                                <li key={i} className="text-sm text-zinc-600 bg-green-50/50 p-2 rounded border border-green-100">
+                                                    {pf}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    {/* Puntos Mejora */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-bold text-red-700 text-sm uppercase tracking-wide flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                                            A Mejorar
+                                        </h4>
+                                        <ul className="space-y-2">
+                                            {evaluation.puntos_mejora.map((pm, i) => (
+                                                <li key={i} className="text-sm text-zinc-600 bg-red-50/50 p-2 rounded border border-red-100">
+                                                    {pm}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Análisis Crítico */}
+                                <div className="space-y-2">
+                                    <h4 className="font-bold text-zinc-800 flex items-center gap-2">
+                                        <BookOpen className="w-4 h-4 text-indigo-500" />
+                                        Análisis Crítico
+                                    </h4>
+                                    <p className="text-zinc-700 leading-relaxed bg-indigo-50/30 p-3 rounded-md border border-indigo-100 text-sm italic">
+                                        "{evaluation.analisis_critico}"
+                                    </p>
+                                </div>
+                            </div>
+                        ) : null}
+                    </ScrollArea>
+                </DialogContent>
+            </Dialog>
+
             <Button size="icon" variant="ghost" onClick={handleExport} title="Exportar HTML">
                 <Download className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
             </Button>
         </div>
-        <EditorContent editor={editor} />
+        <div className="flex-1">
+             <EditorContent editor={editor} />
+        </div>
       </div>
     </div>
   )
