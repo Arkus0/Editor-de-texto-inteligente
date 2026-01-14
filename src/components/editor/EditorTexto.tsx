@@ -48,6 +48,7 @@ export default function EditorTexto() {
   const [selectedRepetition, setSelectedRepetition] = useState<string | null>(null)
   const [synonyms, setSynonyms] = useState<string[]>([])
   const [isLoadingSynonyms, setIsLoadingSynonyms] = useState(false)
+  const [analysisRange, setAnalysisRange] = useState<{ from: number; to: number } | null>(null)
 
   // Connector State
   const [isConnectorOpen, setIsConnectorOpen] = useState(false)
@@ -112,6 +113,14 @@ export default function EditorTexto() {
     onSelectionUpdate: ({ editor }) => {
         const { from, to, empty } = editor.state.selection;
         if (empty) return;
+
+        // Optimization: Skip large selections to avoid performance hit on dictionary lookup
+        if (to - from > 50) {
+           if (to - from > 100) return; // Definitely not a word
+           // Check if it contains spaces (multi-word)
+           const slice = editor.state.doc.textBetween(from, to);
+           if (slice.includes(' ')) return;
+        }
 
         const text = editor.state.doc.textBetween(from, to).trim().toLowerCase();
         // Check for exact match or match inside the dictionary keys
@@ -238,6 +247,8 @@ export default function EditorTexto() {
     const { from, to, empty } = editor.state.selection
     if (empty) return
 
+    setAnalysisRange({ from, to }) // Store range for finding occurrences later
+
     const text = editor.state.doc.textBetween(from, to)
     const words = text.toLowerCase().match(/\b[\wáéíóúñ]+\b/g) || []
     const counts: Record<string, number> = {}
@@ -258,8 +269,47 @@ export default function EditorTexto() {
     setSelectedRepetition(null)
   }
 
+  const handleFindRepetition = (word: string) => {
+    if (!editor || !analysisRange) return
+
+    let foundPos = -1
+    const { from, to } = analysisRange
+
+    editor.state.doc.nodesBetween(from, to, (node, pos) => {
+        if (foundPos !== -1) return false
+        if (node.isText && node.text) {
+             const nodeStart = pos
+             // Determine intersection
+             const searchStart = Math.max(from, nodeStart)
+             const searchEnd = Math.min(to, nodeStart + node.nodeSize)
+
+             if (searchStart >= searchEnd) return
+
+             const textSlice = node.text.slice(searchStart - nodeStart, searchEnd - nodeStart)
+             // Find whole word to avoid partial matches inside other words if possible,
+             // but 'indexOf' is simple. Ideally use regex but offsets are tricky.
+             // We'll stick to simple index for now.
+             const index = textSlice.toLowerCase().indexOf(word.toLowerCase())
+
+             if (index !== -1) {
+                 foundPos = searchStart + index
+             }
+        }
+    })
+
+    if (foundPos !== -1) {
+        editor.chain().focus().setTextSelection({ from: foundPos, to: foundPos + word.length }).run()
+    } else {
+        toast.warning(`No se encontró "${word}" en el rango original.`)
+    }
+  }
+
   const handleFetchSynonyms = async (word: string) => {
     if (selectedRepetition === word) return
+
+    // Select the word in the text so user sees it and can replace it
+    handleFindRepetition(word)
+
     setSelectedRepetition(word)
     setIsLoadingSynonyms(true)
     setSynonyms([])
@@ -288,6 +338,19 @@ export default function EditorTexto() {
     } finally {
         setIsLoadingSynonyms(false)
     }
+  }
+
+  const handleReplaceSynonym = (syn: string) => {
+      if (!editor) return;
+      const { from, to } = editor.state.selection;
+
+      // Safety check: Don't replace if selection is too big (e.g. user selected whole paragraph again)
+      if (to - from > syn.length + 20) {
+          toast.warning("Selección demasiado larga. Selecciona solo la palabra a reemplazar.");
+          return;
+      }
+
+      editor.chain().focus().insertContent(syn).run();
   }
 
   const handleFetchConnectors = async () => {
@@ -515,7 +578,7 @@ export default function EditorTexto() {
                                                 {synonyms.map(syn => (
                                                     <button
                                                         key={syn}
-                                                        onClick={() => editor.chain().focus().insertContent(syn).run()} // Simple replacement for now, strictly ideally would match selection but this is list based replacement
+                                                        onClick={() => handleReplaceSynonym(syn)}
                                                         className="text-xs bg-white border border-indigo-100 px-2 py-1 rounded-md text-indigo-700 hover:bg-indigo-600 hover:text-white transition-colors cursor-pointer"
                                                     >
                                                         {syn}

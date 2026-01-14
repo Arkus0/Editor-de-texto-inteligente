@@ -19,9 +19,13 @@ import {
   Highlighter,
   Subscript as SubIcon,
   Superscript as SupIcon,
-  CheckSquare
+  CheckSquare,
+  Undo,
+  Redo,
+  RemoveFormatting
 } from 'lucide-react'
 import { Toggle } from '@/components/ui/toggle'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
 interface EditorToolbarProps {
@@ -33,6 +37,32 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
   return (
     <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2">
+
+      {/* History */}
+      <div className="flex items-center gap-0.5">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+          className="h-8 w-8 p-0"
+          title="Deshacer"
+        >
+          <Undo className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+          className="h-8 w-8 p-0"
+          title="Rehacer"
+        >
+          <Redo className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <Separator orientation="vertical" className="h-6 mx-1" />
 
       {/* Text Style */}
       <div className="flex items-center gap-0.5">
@@ -76,6 +106,15 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         >
           <Highlighter className="h-4 w-4" />
         </Toggle>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => editor.chain().focus().unsetAllMarks().run()}
+          className="h-8 w-8 p-0"
+          title="Borrar formato"
+        >
+          <RemoveFormatting className="h-4 w-4" />
+        </Button>
       </div>
 
       <Separator orientation="vertical" className="h-6 mx-1" />
