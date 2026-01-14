@@ -7,12 +7,8 @@
 - Network:       http://192.168.0.2:3000
 
 ✓ Starting...
-✓ Ready in 707ms
-Error en API formalizar: Error [AI_LoadAPIKeyError]: OpenAI API key is missing. Pass it using the 'apiKey' parameter or the OPENAI_API_KEY environment variable.
-    at ignore-listed frames {
-  cause: undefined
-}
-Error en API formalizar: Error [AI_LoadAPIKeyError]: OpenAI API key is missing. Pass it using the 'apiKey' parameter or the OPENAI_API_KEY environment variable.
+✓ Ready in 1755ms
+Error en API conectores: Error [AI_LoadAPIKeyError]: OpenAI API key is missing. Pass it using the 'apiKey' parameter or the OPENAI_API_KEY environment variable.
     at ignore-listed frames {
   cause: undefined
 }

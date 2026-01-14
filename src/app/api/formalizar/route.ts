@@ -1,11 +1,19 @@
 import { openai } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
+    // Basic IP identification (headers might vary based on deployment)
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+
+    if (!rateLimit(ip, 10, 60000)) { // 10 requests per minute
+      return new Response(JSON.stringify({ error: 'Demasiadas solicitudes. Por favor espera un momento.' }), { status: 429 });
+    }
+
     const { text } = await req.json();
 
     if (!text) {
