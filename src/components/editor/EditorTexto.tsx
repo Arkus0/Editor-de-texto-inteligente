@@ -11,6 +11,11 @@ import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import { TextStyle } from '@tiptap/extension-text-style'
+import FontFamily from '@tiptap/extension-font-family'
+import Color from '@tiptap/extension-color'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -91,6 +96,14 @@ export default function EditorTexto() {
       TaskItem.configure({
         nested: true,
       }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+      }),
+      Image,
+      TextStyle,
+      FontFamily,
+      Color,
     ],
     editorProps: {
       attributes: {

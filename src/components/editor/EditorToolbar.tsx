@@ -22,18 +22,48 @@ import {
   CheckSquare,
   Undo,
   Redo,
-  RemoveFormatting
+  RemoveFormatting,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  Type,
+  Palette,
+  Keyboard
 } from 'lucide-react'
 import { Toggle } from '@/components/ui/toggle'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 interface EditorToolbarProps {
   editor: Editor | null
 }
 
 export function EditorToolbar({ editor }: EditorToolbarProps) {
+  const [linkUrl, setLinkUrl] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+
   if (!editor) return null
+
+  const setLink = () => {
+    if (linkUrl) {
+        // If it doesn't start with http/https, maybe add it, but for now let's trust user or simple validation
+        const url = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`
+        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+        setLinkUrl('')
+        toast.success('Enlace añadido')
+    }
+  }
+
+  const addImage = () => {
+    if (imageUrl) {
+        editor.chain().focus().setImage({ src: imageUrl }).run()
+        setImageUrl('')
+        toast.success('Imagen añadida')
+    }
+  }
 
   return (
     <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2">
@@ -60,6 +90,105 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         >
           <Redo className="h-4 w-4" />
         </Button>
+      </div>
+
+      <Separator orientation="vertical" className="h-6 mx-1" />
+
+      {/* Insert */}
+      <div className="flex items-center gap-0.5">
+         <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className={editor.isActive('link') ? 'bg-zinc-100' : ''} title="Enlace">
+                    <LinkIcon className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-2">
+                <div className="flex gap-2">
+                    <input
+                        className="flex-1 px-2 py-1 text-sm border rounded"
+                        placeholder="https://google.com"
+                        value={linkUrl}
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && setLink()}
+                    />
+                    <Button size="sm" onClick={setLink}>OK</Button>
+                </div>
+                {editor.isActive('link') && (
+                     <Button
+                        size="sm"
+                        variant="destructive"
+                        className="w-full mt-2 h-6 text-xs"
+                        onClick={() => editor.chain().focus().unsetLink().run()}
+                     >
+                        Quitar enlace
+                     </Button>
+                )}
+            </PopoverContent>
+         </Popover>
+
+         <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" title="Imagen">
+                    <ImageIcon className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-2">
+                 <div className="space-y-2">
+                    <p className="text-xs text-zinc-500 font-medium uppercase">URL de la imagen</p>
+                    <div className="flex gap-2">
+                        <input
+                            className="flex-1 px-2 py-1 text-sm border rounded"
+                            placeholder="https://..."
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && addImage()}
+                        />
+                        <Button size="sm" onClick={addImage}>Añadir</Button>
+                    </div>
+                 </div>
+            </PopoverContent>
+         </Popover>
+      </div>
+
+      <Separator orientation="vertical" className="h-6 mx-1" />
+
+      {/* Font & Color */}
+      <div className="flex items-center gap-0.5">
+         <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" title="Fuente">
+                    <Type className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-1">
+                <div className="grid gap-1">
+                    <button onClick={() => editor.chain().focus().setFontFamily('Inter').run()} className="text-left px-2 py-1 text-sm hover:bg-zinc-100 rounded font-sans">Sans Serif</button>
+                    <button onClick={() => editor.chain().focus().setFontFamily('Merriweather').run()} className="text-left px-2 py-1 text-sm hover:bg-zinc-100 rounded font-serif">Serif</button>
+                    <button onClick={() => editor.chain().focus().setFontFamily('monospace').run()} className="text-left px-2 py-1 text-sm hover:bg-zinc-100 rounded font-mono">Monospace</button>
+                </div>
+            </PopoverContent>
+         </Popover>
+
+         <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" title="Color">
+                    <Palette className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+                <div className="flex gap-1">
+                    {['#000000', '#4338ca', '#ef4444', '#10b981', '#f59e0b', '#6b7280'].map(color => (
+                        <button
+                            key={color}
+                            onClick={() => editor.chain().focus().setColor(color).run()}
+                            className="w-6 h-6 rounded-full border border-zinc-200"
+                            style={{ backgroundColor: color }}
+                            title={color}
+                        />
+                    ))}
+                </div>
+            </PopoverContent>
+         </Popover>
       </div>
 
       <Separator orientation="vertical" className="h-6 mx-1" />
@@ -243,6 +372,38 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         >
           <Quote className="h-4 w-4" />
         </Toggle>
+      </div>
+
+      <div className="ml-auto">
+        <Dialog>
+             <DialogTrigger asChild>
+                 <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400" title="Atajos de teclado">
+                     <Keyboard className="h-4 w-4" />
+                 </Button>
+             </DialogTrigger>
+             <DialogContent>
+                 <DialogHeader>
+                     <DialogTitle>Atajos de Teclado</DialogTitle>
+                     <DialogDescription>
+                         Mejora tu velocidad con estos atajos comunes.
+                     </DialogDescription>
+                 </DialogHeader>
+                 <div className="grid grid-cols-2 gap-4 py-4">
+                     <div className="space-y-2">
+                         <div className="flex justify-between text-sm border-b pb-1"><span>Negrita</span> <kbd className="bg-zinc-100 px-1 rounded">Ctrl+B</kbd></div>
+                         <div className="flex justify-between text-sm border-b pb-1"><span>Cursiva</span> <kbd className="bg-zinc-100 px-1 rounded">Ctrl+I</kbd></div>
+                         <div className="flex justify-between text-sm border-b pb-1"><span>Subrayado</span> <kbd className="bg-zinc-100 px-1 rounded">Ctrl+U</kbd></div>
+                         <div className="flex justify-between text-sm border-b pb-1"><span>Tachado</span> <kbd className="bg-zinc-100 px-1 rounded">Ctrl+Shift+X</kbd></div>
+                     </div>
+                     <div className="space-y-2">
+                         <div className="flex justify-between text-sm border-b pb-1"><span>Deshacer</span> <kbd className="bg-zinc-100 px-1 rounded">Ctrl+Z</kbd></div>
+                         <div className="flex justify-between text-sm border-b pb-1"><span>Rehacer</span> <kbd className="bg-zinc-100 px-1 rounded">Ctrl+Y</kbd></div>
+                         <div className="flex justify-between text-sm border-b pb-1"><span>Enlace</span> <kbd className="bg-zinc-100 px-1 rounded">No def.</kbd></div>
+                         <div className="flex justify-between text-sm border-b pb-1"><span>H1</span> <kbd className="bg-zinc-100 px-1 rounded">Ctrl+Alt+1</kbd></div>
+                     </div>
+                 </div>
+             </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
