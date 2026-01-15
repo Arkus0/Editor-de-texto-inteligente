@@ -40,7 +40,7 @@ export default function Home() {
         ) : (
             <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-100 dark:border-zinc-800">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Bienvenido a <strong>SocioFlow</strong>.
+                    Bienvenido a <strong>Juord</strong>.
                 </p>
                 <ul className="mt-4 space-y-2 text-xs text-zinc-500 list-disc pl-4">
                     <li>Selecciona texto para <strong>formalizar</strong>.</li>
