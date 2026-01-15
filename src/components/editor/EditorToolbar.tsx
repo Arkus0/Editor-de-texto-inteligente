@@ -25,6 +25,7 @@ import {
   RemoveFormatting,
   Link as LinkIcon,
   Image as ImageIcon,
+  Video,
   Type,
   Palette,
   Keyboard
@@ -36,6 +37,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { FileMenu } from './FileMenu'
+import { BibliographyManager } from '../bibliography/BibliographyManager'
+import { AuthDialog } from '../auth/AuthDialog'
 
 interface EditorToolbarProps {
   editor: Editor | null
@@ -44,6 +48,7 @@ interface EditorToolbarProps {
 export function EditorToolbar({ editor }: EditorToolbarProps) {
   const [linkUrl, setLinkUrl] = useState('')
   const [imageUrl, setImageUrl] = useState('')
+  const [videoUrl, setVideoUrl] = useState('')
 
   if (!editor) return null
 
@@ -65,8 +70,24 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     }
   }
 
+  const addVideo = () => {
+    if (videoUrl) {
+        editor.chain().focus().setYoutubeVideo({ src: videoUrl }).run()
+        setVideoUrl('')
+        toast.success('Video añadido')
+    }
+  }
+
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2">
+    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2 print:hidden">
+
+      <FileMenu />
+
+      <Separator orientation="vertical" className="h-6 mx-1" />
+
+      <BibliographyManager editor={editor} />
+
+      <Separator orientation="vertical" className="h-6 mx-1" />
 
       {/* History */}
       <div className="flex items-center gap-0.5">
@@ -144,6 +165,29 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
                             onKeyDown={(e) => e.key === 'Enter' && addImage()}
                         />
                         <Button size="sm" onClick={addImage}>Añadir</Button>
+                    </div>
+                 </div>
+            </PopoverContent>
+         </Popover>
+
+         <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" title="Video de YouTube">
+                    <Video className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-2">
+                 <div className="space-y-2">
+                    <p className="text-xs text-zinc-500 font-medium uppercase">URL de YouTube</p>
+                    <div className="flex gap-2">
+                        <input
+                            className="flex-1 px-2 py-1 text-sm border rounded"
+                            placeholder="https://youtube.com/..."
+                            value={videoUrl}
+                            onChange={(e) => setVideoUrl(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && addVideo()}
+                        />
+                        <Button size="sm" onClick={addVideo}>Añadir</Button>
                     </div>
                  </div>
             </PopoverContent>
@@ -374,7 +418,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         </Toggle>
       </div>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        <AuthDialog />
         <Dialog>
              <DialogTrigger asChild>
                  <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400" title="Atajos de teclado">

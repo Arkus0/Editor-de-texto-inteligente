@@ -16,7 +16,7 @@ const merriweather = Merriweather({
 });
 
 export const metadata: Metadata = {
-  title: "SocioFlow",
+  title: "Juord",
   description: "Editor Asistido para Sociólogos",
 };
 

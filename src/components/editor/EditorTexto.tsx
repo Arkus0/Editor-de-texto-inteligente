@@ -13,17 +13,19 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
+import Youtube from '@tiptap/extension-youtube'
 import { TextStyle } from '@tiptap/extension-text-style'
 import FontFamily from '@tiptap/extension-font-family'
 import Color from '@tiptap/extension-color'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Wand2, Repeat, Loader2, GraduationCap, BookOpen, PenTool, Search, Link as LinkIcon, ArrowRight, Download } from 'lucide-react'
-import { useState } from 'react'
+import { Wand2, Repeat, Loader2, GraduationCap, BookOpen, PenTool, Search, Link as LinkIcon, ArrowRight, Download, Printer, Gavel, Scale } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { stopwords } from '@/lib/stopwords'
 import { useSidebarStore } from '@/store/useSidebarStore'
+import { useDocumentStore } from '@/store/useDocumentStore'
 import { sociDictionary } from '@/lib/dictionary'
 import { EditorToolbar } from './EditorToolbar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -41,6 +43,16 @@ type Evaluation = {
 
 export default function EditorTexto() {
   const { setDefinition } = useSidebarStore();
+  const { currentDocId, updateDocument, checkLegacyData } = useDocumentStore();
+  const currentDocIdRef = useRef(currentDocId);
+
+  useEffect(() => {
+      checkLegacyData();
+  }, [checkLegacyData]);
+
+  useEffect(() => {
+      currentDocIdRef.current = currentDocId;
+  }, [currentDocId]);
 
   // Formalizer State
   const [isLoading, setIsLoading] = useState(false)
@@ -55,10 +67,20 @@ export default function EditorTexto() {
   const [isLoadingSynonyms, setIsLoadingSynonyms] = useState(false)
   const [analysisRange, setAnalysisRange] = useState<{ from: number; to: number } | null>(null)
 
+  // Devil's Advocate State
+  const [isDevilOpen, setIsDevilOpen] = useState(false)
+  const [critique, setCritique] = useState<{ critique: string; perspective: string } | null>(null)
+  const [isLoadingCritique, setIsLoadingCritique] = useState(false)
+
   // Connector State
   const [isConnectorOpen, setIsConnectorOpen] = useState(false)
   const [connectors, setConnectors] = useState<string[]>([])
   const [isLoadingConnectors, setIsLoadingConnectors] = useState(false)
+
+  // Writer's Block State
+  const [isIdeasOpen, setIsIdeasOpen] = useState(false)
+  const [ideas, setIdeas] = useState<string[]>([])
+  const [isLoadingIdeas, setIsLoadingIdeas] = useState(false)
 
   // Evaluation State
   const [isEvaluationOpen, setIsEvaluationOpen] = useState(false)
@@ -101,27 +123,33 @@ export default function EditorTexto() {
         autolink: true,
       }),
       Image,
+      Youtube.configure({
+        controls: false,
+      }),
       TextStyle,
       FontFamily,
       Color,
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-lg prose-stone dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-200px)] font-serif px-8 py-4',
+        class: 'prose prose-lg prose-stone dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-200px)] print:min-h-0 font-serif px-8 py-4 print:px-0 print:py-0',
       },
     },
     content: '<p>La sociedad moderna se caracteriza por...</p>',
     immediatelyRender: false,
     onCreate: ({ editor }) => {
-        // Persistence: Load
-        const saved = localStorage.getItem('socioflow-content')
-        if (saved) {
-            editor.commands.setContent(saved)
+        // Load from store
+        const state = useDocumentStore.getState();
+        if (state.currentDocId) {
+             const doc = state.documents.find(d => d.id === state.currentDocId);
+             if (doc) editor.commands.setContent(doc.content);
         }
     },
     onUpdate: ({ editor }) => {
-        // Persistence: Save
-        localStorage.setItem('socioflow-content', editor.getHTML())
+        // Persistence: Save to store
+        if (currentDocIdRef.current) {
+            updateDocument(currentDocIdRef.current, { content: editor.getHTML() });
+        }
     },
     onSelectionUpdate: ({ editor }) => {
         const { from, to, empty } = editor.state.selection;
@@ -154,6 +182,16 @@ export default function EditorTexto() {
         }
     }
   })
+
+  // Sync editor with store when switching documents
+  useEffect(() => {
+    if (editor && currentDocId) {
+        const doc = useDocumentStore.getState().documents.find(d => d.id === currentDocId);
+        if (doc && editor.getHTML() !== doc.content) {
+             editor.commands.setContent(doc.content);
+        }
+    }
+  }, [currentDocId, editor]);
 
   const handleExport = () => {
     if (!editor) return;
@@ -366,6 +404,34 @@ export default function EditorTexto() {
       editor.chain().focus().insertContent(syn).run();
   }
 
+  const handleDevilAdvocate = async () => {
+      if (!editor) return
+      const { from, to, empty } = editor.state.selection
+      if (empty) return
+
+      const text = editor.state.doc.textBetween(from, to)
+      setIsLoadingCritique(true)
+      setCritique(null)
+
+      try {
+          const res = await fetch('/api/critica', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text })
+          })
+
+          if (!res.ok) throw new Error('Error al obtener crítica')
+
+          const data = await res.json()
+          setCritique(data)
+      } catch (error) {
+          toast.error("No se pudo generar la crítica")
+          console.error(error)
+      } finally {
+          setIsLoadingCritique(false)
+      }
+  }
+
   const handleFetchConnectors = async () => {
     setIsLoadingConnectors(true)
     setConnectors([])
@@ -407,17 +473,40 @@ export default function EditorTexto() {
     }
   }
 
+  const handleFetchIdeas = async () => {
+      setIsLoadingIdeas(true)
+      setIdeas([])
+      try {
+          const context = editor?.getText() || ""
+          const res = await fetch('/api/ideas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ context })
+          })
+
+          if (!res.ok) throw new Error('Error al obtener ideas')
+
+          const data = await res.json()
+          setIdeas(data.ideas)
+      } catch (error) {
+          toast.error("No se pudieron generar ideas")
+          console.error(error)
+      } finally {
+          setIsLoadingIdeas(false)
+      }
+  }
+
   if (!editor) return null
 
   return (
     <div className="w-full relative">
-      {/* Floating Menu (Connectors) */}
+      {/* Floating Menu (Connectors + Writer's Block) */}
       {editor && (
         <FloatingMenu
             editor={editor}
-            className="flex items-center -ml-16"
+            className="flex items-center -ml-20 gap-1 print:hidden"
         >
-             <Popover open={isConnectorOpen} onOpenChange={(open) => { setIsConnectorOpen(open); if(open) handleFetchConnectors(); }}>
+             <Popover open={isConnectorOpen} onOpenChange={(open) => { setIsConnectorOpen(open); if(open) { setIsIdeasOpen(false); handleFetchConnectors(); } }}>
                 <PopoverTrigger asChild>
                     <Button
                         size="icon"
@@ -457,6 +546,51 @@ export default function EditorTexto() {
                     </div>
                 </PopoverContent>
             </Popover>
+
+            <Popover open={isIdeasOpen} onOpenChange={(open) => { setIsIdeasOpen(open); if(open) { setIsConnectorOpen(false); handleFetchIdeas(); } }}>
+                <PopoverTrigger asChild>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full text-zinc-400 hover:text-yellow-600 hover:bg-yellow-50 transition-colors"
+                        title="Estoy en blanco"
+                    >
+                        <Wand2 className="w-4 h-4" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0 overflow-hidden shadow-lg ml-2" side="right" align="start">
+                    <div className="bg-yellow-50 border-b border-yellow-100 p-2 text-xs font-medium text-yellow-700 uppercase tracking-wider flex items-center gap-2">
+                        <Wand2 className="w-3 h-3" />
+                        Ideas para continuar
+                    </div>
+                    <div className="p-3 space-y-2 max-h-[300px] overflow-y-auto">
+                        {isLoadingIdeas ? (
+                            <div className="space-y-2">
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-12 w-full" />
+                            </div>
+                        ) : (
+                            ideas.map((idea, i) => (
+                                <div key={i} className="text-sm text-zinc-700 bg-white p-2 rounded border border-zinc-100 shadow-sm">
+                                    <p className="mb-2 italic">"{idea}"</p>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-6 text-xs w-full text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                        onClick={() => {
+                                            editor.chain().focus().insertContent(idea).run()
+                                            setIsIdeasOpen(false)
+                                        }}
+                                    >
+                                        Insertar Texto
+                                    </Button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </PopoverContent>
+            </Popover>
         </FloatingMenu>
       )}
 
@@ -464,10 +598,10 @@ export default function EditorTexto() {
       {editor && (
         <BubbleMenu
           editor={editor}
-          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-lg p-1 flex gap-1 items-center z-50 max-w-[600px]"
+          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-lg p-1 flex gap-1 items-center z-50 max-w-[600px] print:hidden"
         >
           {/* Formalizer Popover */}
-          <Popover open={isPopoverOpen} onOpenChange={(open) => { setIsPopoverOpen(open); if(open) setIsRepetitionOpen(false); }}>
+          <Popover open={isPopoverOpen} onOpenChange={(open) => { setIsPopoverOpen(open); if(open) { setIsRepetitionOpen(false); setIsDevilOpen(false); } }}>
             <PopoverTrigger asChild>
               <Button
                 size="sm"
@@ -543,8 +677,51 @@ export default function EditorTexto() {
 
           <div className="w-px h-4 bg-zinc-200 mx-1" />
 
+          {/* Devil's Advocate Popover */}
+          <Popover open={isDevilOpen} onOpenChange={(open) => { setIsDevilOpen(open); if(open) { setIsPopoverOpen(false); setIsRepetitionOpen(false); handleDevilAdvocate(); } }}>
+             <PopoverTrigger asChild>
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-rose-600 hover:text-rose-900 hover:bg-rose-50 gap-2 h-8 px-2"
+                    title="Abogado del Diablo"
+                >
+                    <Scale className="w-3.5 h-3.5" />
+                </Button>
+             </PopoverTrigger>
+             <PopoverContent className="w-80 p-0 overflow-hidden shadow-2xl" align="start" side="bottom">
+                <div className="bg-rose-50 border-b border-rose-100 p-2 text-xs font-medium text-rose-700 uppercase tracking-wider flex items-center gap-2">
+                    <Gavel className="w-3 h-3" />
+                    Crítica: Abogado del Diablo
+                </div>
+                <div className="p-4 max-h-[300px] overflow-y-auto">
+                    {isLoadingCritique ? (
+                        <div className="space-y-3">
+                            <Skeleton className="h-4 w-1/3 bg-rose-100" />
+                            <Skeleton className="h-20 w-full" />
+                        </div>
+                    ) : critique ? (
+                        <div className="space-y-2">
+                            <div className="text-xs font-bold text-rose-600 uppercase tracking-wide">
+                                Perspectiva: {critique.perspective}
+                            </div>
+                            <p className="text-sm text-zinc-700 leading-relaxed italic border-l-2 border-rose-200 pl-3">
+                                "{critique.critique}"
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="text-center text-zinc-400 text-sm">
+                            Selecciona texto para criticar.
+                        </div>
+                    )}
+                </div>
+             </PopoverContent>
+          </Popover>
+
+          <div className="w-px h-4 bg-zinc-200 mx-1" />
+
           {/* Repetition Popover */}
-          <Popover open={isRepetitionOpen} onOpenChange={(open) => { setIsRepetitionOpen(open); if(open) { setIsPopoverOpen(false); handleAnalyzeRepetitions(); } }}>
+          <Popover open={isRepetitionOpen} onOpenChange={(open) => { setIsRepetitionOpen(open); if(open) { setIsPopoverOpen(false); setIsDevilOpen(false); handleAnalyzeRepetitions(); } }}>
             <PopoverTrigger asChild>
                 <Button
                     size="sm"
@@ -611,7 +788,7 @@ export default function EditorTexto() {
       )}
 
       {/* Editor Content */}
-      <div className="relative bg-white dark:bg-zinc-950 min-h-screen shadow-sm border-x border-zinc-100 dark:border-zinc-900 mx-auto max-w-4xl flex flex-col">
+      <div className="relative bg-white dark:bg-zinc-950 min-h-screen shadow-sm border-x border-zinc-100 dark:border-zinc-900 mx-auto max-w-4xl flex flex-col print:max-w-none print:shadow-none print:border-none print:min-h-0">
          {/* Toolbar */}
          <EditorToolbar editor={editor} />
 
@@ -720,6 +897,9 @@ export default function EditorTexto() {
 
             <Button size="icon" variant="ghost" onClick={handleExport} title="Exportar HTML">
                 <Download className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={() => window.print()} title="Imprimir / PDF">
+                <Printer className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
             </Button>
         </div>
         <div className="flex-1">
