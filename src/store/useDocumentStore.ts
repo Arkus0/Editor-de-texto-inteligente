@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { supabase } from '@/lib/supabaseClient';
 
 export type Document = {
   id: string;
@@ -12,14 +13,14 @@ type DocumentStore = {
   documents: Document[];
   currentDocId: string | null;
 
-  createDocument: () => string; // Returns new doc ID
+  createDocument: () => string;
   openDocument: (id: string) => void;
   updateDocument: (id: string, updates: Partial<Document>) => void;
   deleteDocument: (id: string) => void;
   getCurrentDocument: () => Document | undefined;
-
-  // Special action to check for old data
   checkLegacyData: () => void;
+  syncWithCloud: (userId: string) => Promise<void>;
+  syncLocalToCloud: (doc: Document) => Promise<void>;
 };
 
 export const useDocumentStore = create<DocumentStore>()(
@@ -39,6 +40,10 @@ export const useDocumentStore = create<DocumentStore>()(
           documents: [newDoc, ...state.documents],
           currentDocId: newDoc.id,
         }));
+
+        // Try to sync to cloud if user is logged in
+        get().syncLocalToCloud(newDoc);
+
         return newDoc.id;
       },
 
@@ -47,17 +52,23 @@ export const useDocumentStore = create<DocumentStore>()(
       },
 
       updateDocument: (id, updates) => {
-        set((state) => ({
-          documents: state.documents.map((doc) =>
-            doc.id === id ? { ...doc, ...updates, lastModified: Date.now() } : doc
-          ),
-        }));
+        set((state) => {
+             const updatedDocs = state.documents.map((doc) =>
+                doc.id === id ? { ...doc, ...updates, lastModified: Date.now() } : doc
+             );
+             return { documents: updatedDocs };
+        });
+
+        // Sync the updated document
+        const doc = get().documents.find(d => d.id === id);
+        if (doc) {
+            get().syncLocalToCloud(doc);
+        }
       },
 
       deleteDocument: (id) => {
         set((state) => {
           const newDocs = state.documents.filter((doc) => doc.id !== id);
-          // If we deleted the current doc, close it or open the first available
           let newCurrentId = state.currentDocId;
           if (state.currentDocId === id) {
              newCurrentId = newDocs.length > 0 ? newDocs[0].id : null;
@@ -67,6 +78,15 @@ export const useDocumentStore = create<DocumentStore>()(
             currentDocId: newCurrentId,
           };
         });
+
+        // Delete from cloud
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                supabase.from('documents').delete().eq('id', id).then(res => {
+                    if (res.error) console.error("Error deleting from cloud", res.error);
+                });
+            }
+        });
       },
 
       getCurrentDocument: () => {
@@ -75,14 +95,9 @@ export const useDocumentStore = create<DocumentStore>()(
       },
 
       checkLegacyData: () => {
-        // Only run if we are in the browser
         if (typeof window === 'undefined') return;
-
         const legacyContent = localStorage.getItem('socioflow-content');
         if (legacyContent) {
-           // Check if we already migrated it (heuristic: do we have docs?)
-           // Or maybe just strictly if documents is empty?
-           // Let's say if documents is empty, we import it.
            const { documents } = get();
            if (documents.length === 0) {
                const newDoc: Document = {
@@ -95,21 +110,85 @@ export const useDocumentStore = create<DocumentStore>()(
                    documents: [newDoc],
                    currentDocId: newDoc.id
                });
-               // Optional: clear legacy key so we don't re-import?
-               // localStorage.removeItem('socioflow-content');
-               // Better keep it for safety for now.
+               get().syncLocalToCloud(newDoc);
            }
         } else {
-            // If no legacy content and no documents, create a fresh one
             const { documents } = get();
              if (documents.length === 0) {
                  get().createDocument();
              }
         }
+      },
+
+      syncWithCloud: async (userId: string) => {
+          if (!userId) return;
+
+          // 1. Fetch cloud documents
+          const { data: cloudDocs, error } = await supabase
+              .from('documents')
+              .select('*');
+
+          if (error) {
+              console.error("Error fetching cloud docs:", error);
+              return;
+          }
+
+          if (!cloudDocs) return;
+
+          // 2. Merge strategies are hard. For now, Cloud wins if it has data?
+          // Or we simple union?
+          // Let's take Cloud docs and add them to local if they don't exist.
+          // If they exist locally, we keep the one with higher lastModified?
+          // Since we use 'upsert' on save, let's trust Cloud as the "latest session".
+
+          const localDocs = get().documents;
+          const mergedDocs = [...localDocs];
+
+          cloudDocs.forEach((cDoc: any) => {
+              const existingIndex = mergedDocs.findIndex(l => l.id === cDoc.id);
+
+              const mappedDoc: Document = {
+                  id: cDoc.id,
+                  title: cDoc.title,
+                  content: cDoc.content,
+                  lastModified: cDoc.last_modified
+              };
+
+              if (existingIndex === -1) {
+                  mergedDocs.push(mappedDoc);
+              } else {
+                  // Conflict resolution: most recent wins
+                  if (mappedDoc.lastModified > mergedDocs[existingIndex].lastModified) {
+                      mergedDocs[existingIndex] = mappedDoc;
+                  }
+              }
+          });
+
+          set({ documents: mergedDocs });
+
+          // 3. Upload any local docs that aren't in cloud?
+          // Just simplistic trigger:
+          // mergedDocs.forEach(d => get().syncLocalToCloud(d)); // This might be too heavy on login
+      },
+
+      syncLocalToCloud: async (doc: Document) => {
+          // Check if logged in
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.user) return;
+
+          const { error } = await supabase.from('documents').upsert({
+              id: doc.id,
+              user_id: session.user.id,
+              title: doc.title,
+              content: doc.content,
+              last_modified: doc.lastModified
+          });
+
+          if (error) console.error("Error saving to cloud:", error);
       }
     }),
     {
-      name: 'socioflow-storage', // name of the item in the storage (must be unique)
+      name: 'socioflow-storage',
       storage: createJSONStorage(() => localStorage),
     }
   )

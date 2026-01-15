@@ -39,6 +39,7 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { FileMenu } from './FileMenu'
 import { BibliographyManager } from '../bibliography/BibliographyManager'
+import { AuthDialog } from '../auth/AuthDialog'
 
 interface EditorToolbarProps {
   editor: Editor | null
@@ -417,7 +418,8 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         </Toggle>
       </div>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        <AuthDialog />
         <Dialog>
              <DialogTrigger asChild>
                  <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400" title="Atajos de teclado">

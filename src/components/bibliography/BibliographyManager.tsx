@@ -26,6 +26,51 @@ export function BibliographyManager({ editor }: BibliographyManagerProps) {
     const [year, setYear] = useState('');
     const [source, setSource] = useState('');
 
+    // DOI State
+    const [doi, setDoi] = useState('');
+    const [isLoadingDoi, setIsLoadingDoi] = useState(false);
+
+    const handleDoiSearch = async () => {
+        if (!doi) return;
+        setIsLoadingDoi(true);
+        try {
+            // Clean DOI
+            const cleanDoi = doi.replace('https://doi.org/', '').trim();
+            const res = await fetch(`https://api.crossref.org/works/${cleanDoi}`);
+            if (!res.ok) throw new Error('DOI no encontrado');
+
+            const data = await res.json();
+            const work = data.message;
+
+            // Map to our fields
+            setTitle(work.title ? work.title[0] : '');
+
+            if (work.author) {
+                const authors = work.author.map((a: any) => `${a.given} ${a.family}`).join(', ');
+                setAuthor(authors);
+            }
+
+            if (work.created) {
+                setYear(work.created['date-parts'][0][0].toString());
+            }
+
+            if (work['container-title']) {
+                setSource(work['container-title'][0]);
+            }
+
+            // Infer type
+            if (work.type === 'journal-article') setType('article');
+            else if (work.type === 'book') setType('book');
+            else setType('web');
+
+        } catch (error) {
+            console.error(error);
+            alert("No se pudo obtener información de ese DOI.");
+        } finally {
+            setIsLoadingDoi(false);
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !author || !year) return;
@@ -120,6 +165,22 @@ export function BibliographyManager({ editor }: BibliographyManagerProps) {
                         <h3 className="font-bold text-zinc-800 mb-6 flex items-center gap-2">
                             <Plus className="w-4 h-4" /> Añadir Nueva Referencia
                         </h3>
+
+                        {/* DOI Search */}
+                        <div className="mb-6 p-4 bg-zinc-50 rounded-lg border border-zinc-200">
+                             <Label className="text-xs uppercase text-zinc-500 mb-2 block">Autocompletar con DOI</Label>
+                             <div className="flex gap-2">
+                                 <Input
+                                    placeholder="Ej: 10.1080/00380253..."
+                                    value={doi}
+                                    onChange={e => setDoi(e.target.value)}
+                                    className="bg-white text-sm"
+                                 />
+                                 <Button onClick={handleDoiSearch} disabled={isLoadingDoi} variant="outline" className="shrink-0">
+                                     {isLoadingDoi ? 'Buscando...' : 'Buscar'}
+                                 </Button>
+                             </div>
+                        </div>
 
                         <Tabs value={type} onValueChange={(v) => setType(v as ReferenceType)} className="flex-1 flex flex-col">
                             <TabsList className="grid w-full grid-cols-3 mb-4">
