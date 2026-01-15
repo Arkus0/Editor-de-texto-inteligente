@@ -4,6 +4,7 @@ type Definition = {
     term: string;
     definition: string;
     source?: string;
+    field?: string;
 }
 
 type SidebarStore = {

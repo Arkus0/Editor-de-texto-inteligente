@@ -28,7 +28,14 @@ import {
   Video,
   Type,
   Palette,
-  Keyboard
+  Keyboard,
+  Table as TableIcon,
+  Search,
+  Eye,
+  FileText,
+  Cloud,
+  CloudOff,
+  Loader2 as LoaderIcon
 } from 'lucide-react'
 import { Toggle } from '@/components/ui/toggle'
 import { Button } from '@/components/ui/button'
@@ -40,6 +47,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { FileMenu } from './FileMenu'
 import { BibliographyManager } from '../bibliography/BibliographyManager'
 import { AuthDialog } from '../auth/AuthDialog'
+import { useDocumentStore } from '@/store/useDocumentStore'
 
 interface EditorToolbarProps {
   editor: Editor | null
@@ -49,8 +57,27 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   const [linkUrl, setLinkUrl] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [replaceTerm, setReplaceTerm] = useState('')
+  const [focusMode, setFocusMode] = useState(false)
+  const [wordCount, setWordCount] = useState(0)
+  const [charCount, setCharCount] = useState(0)
+
+  const { syncStatus, lastSyncTime } = useDocumentStore()
 
   if (!editor) return null
+
+  // Update word and character count
+  const updateCounts = () => {
+    const text = editor.getText()
+    const words = text.trim().split(/\s+/).filter(w => w.length > 0).length
+    const chars = text.length
+    setWordCount(words)
+    setCharCount(chars)
+  }
+
+  // Update counts when editor content changes
+  editor.on('update', updateCounts)
 
   const setLink = () => {
     if (linkUrl) {
@@ -78,8 +105,66 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     }
   }
 
+  const insertTable = () => {
+    editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+    toast.success('Tabla insertada')
+  }
+
+  const handleSearch = () => {
+    if (!searchTerm) return
+    // Simple search: Find and select first occurrence
+    const { doc } = editor.state
+    const text = doc.textContent
+    const index = text.toLowerCase().indexOf(searchTerm.toLowerCase())
+
+    if (index !== -1) {
+      // Find position in ProseMirror document
+      let pos = 1 // Start position
+      doc.descendants((node) => {
+        if (node.isText && node.text) {
+          const nodeText = node.text.toLowerCase()
+          const localIndex = nodeText.indexOf(searchTerm.toLowerCase())
+          if (localIndex !== -1 && pos + localIndex === index + 1) {
+            editor.chain().focus().setTextSelection({
+              from: pos + localIndex,
+              to: pos + localIndex + searchTerm.length
+            }).run()
+            return false
+          }
+          pos += node.nodeSize
+        }
+        return true
+      })
+      toast.success(`Encontrado: "${searchTerm}"`)
+    } else {
+      toast.error('No se encontró el texto')
+    }
+  }
+
+  const handleReplace = () => {
+    if (!searchTerm || !replaceTerm) return
+    const { from, to } = editor.state.selection
+    const selectedText = editor.state.doc.textBetween(from, to)
+
+    if (selectedText.toLowerCase() === searchTerm.toLowerCase()) {
+      editor.chain().focus().insertContent(replaceTerm).run()
+      toast.success('Texto reemplazado')
+    } else {
+      toast.error('Primero busca el texto a reemplazar')
+    }
+  }
+
+  const handleReplaceAll = () => {
+    if (!searchTerm || !replaceTerm) return
+    const html = editor.getHTML()
+    const regex = new RegExp(searchTerm, 'gi')
+    const newHtml = html.replace(regex, replaceTerm)
+    editor.commands.setContent(newHtml)
+    toast.success('Todos los textos reemplazados')
+  }
+
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2 print:hidden">
+    <div className={`border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2 print:hidden transition-opacity ${focusMode ? 'opacity-30 hover:opacity-100' : ''}`}>
 
       <FileMenu />
 
@@ -418,7 +503,218 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
         </Toggle>
       </div>
 
+      <Separator orientation="vertical" className="h-6 mx-1" />
+
+      {/* Table Controls */}
+      <div className="flex items-center gap-0.5">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" title="Insertar tabla">
+              <TableIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-2">
+            <div className="space-y-2">
+              <Button size="sm" onClick={insertTable} className="w-full">
+                Insertar tabla 3x3
+              </Button>
+              {editor.isActive('table') && (
+                <>
+                  <div className="grid grid-cols-2 gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => editor.chain().focus().addColumnBefore().run()}
+                      className="text-xs"
+                    >
+                      + Col Izq
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => editor.chain().focus().addColumnAfter().run()}
+                      className="text-xs"
+                    >
+                      + Col Der
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => editor.chain().focus().addRowBefore().run()}
+                      className="text-xs"
+                    >
+                      + Fila Arriba
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => editor.chain().focus().addRowAfter().run()}
+                      className="text-xs"
+                    >
+                      + Fila Abajo
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => editor.chain().focus().deleteColumn().run()}
+                      className="text-xs"
+                    >
+                      - Columna
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => editor.chain().focus().deleteRow().run()}
+                      className="text-xs"
+                    >
+                      - Fila
+                    </Button>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => editor.chain().focus().deleteTable().run()}
+                    className="w-full"
+                  >
+                    Eliminar tabla
+                  </Button>
+                </>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <Separator orientation="vertical" className="h-6 mx-1" />
+
+      {/* Search & Replace */}
+      <div className="flex items-center gap-0.5">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="sm" title="Buscar y reemplazar" onClick={updateCounts}>
+              <Search className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Buscar y Reemplazar</DialogTitle>
+              <DialogDescription>
+                Busca y reemplaza texto en el documento
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium">Buscar</label>
+                <input
+                  className="w-full px-3 py-2 text-sm border rounded mt-1"
+                  placeholder="Texto a buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Reemplazar con</label>
+                <input
+                  className="w-full px-3 py-2 text-sm border rounded mt-1"
+                  placeholder="Texto nuevo..."
+                  value={replaceTerm}
+                  onChange={(e) => setReplaceTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSearch} className="flex-1">
+                  Buscar
+                </Button>
+                <Button onClick={handleReplace} variant="outline" className="flex-1">
+                  Reemplazar
+                </Button>
+                <Button onClick={handleReplaceAll} variant="destructive" className="flex-1">
+                  Reemplazar todo
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       <div className="ml-auto flex items-center gap-2">
+        {/* Word Counter */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" title="Estadísticas" onClick={updateCounts}>
+              <FileText className="h-4 w-4 mr-1" />
+              <span className="text-xs">{wordCount}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Palabras:</span>
+                <span>{wordCount}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Caracteres:</span>
+                <span>{charCount}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Sin espacios:</span>
+                <span>{charCount - (editor.getText().match(/\s/g)?.length || 0)}</span>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Focus Mode */}
+        <Toggle
+          size="sm"
+          pressed={focusMode}
+          onPressedChange={setFocusMode}
+          title="Modo enfoque"
+        >
+          <Eye className="h-4 w-4" />
+        </Toggle>
+
+        {/* Sync Status Indicator */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`gap-1 ${
+                syncStatus === 'syncing' ? 'text-blue-600' :
+                syncStatus === 'synced' ? 'text-green-600' :
+                syncStatus === 'error' ? 'text-red-600' :
+                'text-zinc-400'
+              }`}
+              title="Estado de sincronización"
+            >
+              {syncStatus === 'syncing' && <LoaderIcon className="h-4 w-4 animate-spin" />}
+              {syncStatus === 'synced' && <Cloud className="h-4 w-4" />}
+              {syncStatus === 'error' && <CloudOff className="h-4 w-4" />}
+              {syncStatus === 'idle' && <Cloud className="h-4 w-4" />}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-3">
+            <div className="space-y-2">
+              <div className="font-semibold text-sm">
+                Estado de Sincronización
+              </div>
+              <div className="text-xs text-zinc-600">
+                {syncStatus === 'syncing' && '🔄 Sincronizando con la nube...'}
+                {syncStatus === 'synced' && '✅ Sincronizado'}
+                {syncStatus === 'error' && '❌ Error de sincronización'}
+                {syncStatus === 'idle' && 'ℹ️ Sin cambios pendientes'}
+              </div>
+              {lastSyncTime && syncStatus === 'synced' && (
+                <div className="text-xs text-zinc-400">
+                  Última sincronización: {new Date(lastSyncTime).toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <AuthDialog />
         <Dialog>
              <DialogTrigger asChild>

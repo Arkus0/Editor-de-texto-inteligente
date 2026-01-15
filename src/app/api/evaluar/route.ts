@@ -27,9 +27,9 @@ export async function POST(req: Request) {
         comentario_general: z.string().describe('Resumen general de la calidad del texto.'),
         puntos_fuertes: z.array(z.string()).describe('Lista de 3 aspectos positivos.'),
         puntos_mejora: z.array(z.string()).describe('Lista de 3 aspectos a mejorar.'),
-        analisis_critico: z.string().describe('Breve análisis sobre la profundidad sociológica y argumentativa.'),
+        analisis_critico: z.string().describe('Breve análisis sobre la profundidad académica y argumentativa del texto.'),
       }),
-      system: 'Eres un profesor universitario de sociología estricto pero justo. Evalúas trabajos académicos buscando rigor conceptual, claridad expositiva, uso correcto de terminología y estructura lógica.',
+      system: 'Eres un profesor universitario estricto pero justo. Evalúas trabajos académicos de cualquier disciplina buscando rigor conceptual, claridad expositiva, uso correcto de terminología, estructura lógica y fundamentación sólida. Adapta tus criterios al campo académico del texto.',
       prompt: `Evalúa el siguiente texto académico:\n\n"${text}"`,
     });
 

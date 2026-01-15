@@ -9,9 +9,13 @@ export type Document = {
   lastModified: number;
 };
 
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
+
 type DocumentStore = {
   documents: Document[];
   currentDocId: string | null;
+  syncStatus: SyncStatus;
+  lastSyncTime: number | null;
 
   createDocument: () => string;
   openDocument: (id: string) => void;
@@ -21,13 +25,27 @@ type DocumentStore = {
   checkLegacyData: () => void;
   syncWithCloud: (userId: string) => Promise<void>;
   syncLocalToCloud: (doc: Document) => Promise<void>;
+  setSyncStatus: (status: SyncStatus) => void;
 };
+
+// Debounce timer for sync
+let syncTimer: NodeJS.Timeout | null = null;
+const SYNC_DEBOUNCE_MS = 2000; // 2 seconds
 
 export const useDocumentStore = create<DocumentStore>()(
   persist(
     (set, get) => ({
       documents: [],
       currentDocId: null,
+      syncStatus: 'idle' as SyncStatus,
+      lastSyncTime: null,
+
+      setSyncStatus: (status: SyncStatus) => {
+        set({ syncStatus: status });
+        if (status === 'synced') {
+          set({ lastSyncTime: Date.now() });
+        }
+      },
 
       createDocument: () => {
         const newDoc: Document = {
@@ -59,11 +77,17 @@ export const useDocumentStore = create<DocumentStore>()(
              return { documents: updatedDocs };
         });
 
-        // Sync the updated document
-        const doc = get().documents.find(d => d.id === id);
-        if (doc) {
+        // Debounced sync: wait 2 seconds after last edit
+        if (syncTimer) clearTimeout(syncTimer);
+
+        set({ syncStatus: 'syncing' });
+
+        syncTimer = setTimeout(() => {
+          const doc = get().documents.find(d => d.id === id);
+          if (doc) {
             get().syncLocalToCloud(doc);
-        }
+          }
+        }, SYNC_DEBOUNCE_MS);
       },
 
       deleteDocument: (id) => {
@@ -172,23 +196,36 @@ export const useDocumentStore = create<DocumentStore>()(
       },
 
       syncLocalToCloud: async (doc: Document) => {
-          // Check if logged in
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session?.user) return;
+          try {
+            // Check if logged in
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.user) {
+              get().setSyncStatus('idle');
+              return;
+            }
 
-          const { error } = await supabase.from('documents').upsert({
-              id: doc.id,
-              user_id: session.user.id,
-              title: doc.title,
-              content: doc.content,
-              last_modified: doc.lastModified
-          });
+            const { error } = await supabase.from('documents').upsert({
+                id: doc.id,
+                user_id: session.user.id,
+                title: doc.title,
+                content: doc.content,
+                last_modified: doc.lastModified
+            });
 
-          if (error) console.error("Error saving to cloud:", error);
+            if (error) {
+              console.error("Error saving to cloud:", error);
+              get().setSyncStatus('error');
+            } else {
+              get().setSyncStatus('synced');
+            }
+          } catch (error) {
+            console.error("Sync error:", error);
+            get().setSyncStatus('error');
+          }
       }
     }),
     {
-      name: 'socioflow-storage',
+      name: 'juord-storage',
       storage: createJSONStorage(() => localStorage),
     }
   )

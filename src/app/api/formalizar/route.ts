@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         universitario: z.string().describe('Opción de buen nivel académico pero accesible y claro.'),
         escritor: z.string().describe('Opción con gran calidad literaria, narrativa envolvente y estilo fluido.'),
       }),
-      system: 'Eres un editor experto en sociología y escritura académica. Tu objetivo es mejorar textos de estudiantes ofreciendo variaciones de estilo sin cambiar el significado original.',
+      system: 'Eres un editor experto en escritura académica multidisciplinaria. Tu objetivo es mejorar textos de estudiantes ofreciendo variaciones de estilo sin cambiar el significado original. Adapta el vocabulario y tono al campo académico del texto.',
       prompt: `Reescribe el siguiente fragmento de texto en 3 estilos (Académica, Universitario, Escritor):\n\n"${text}"`,
     });
 

@@ -17,6 +17,10 @@ import Youtube from '@tiptap/extension-youtube'
 import { TextStyle } from '@tiptap/extension-text-style'
 import FontFamily from '@tiptap/extension-font-family'
 import Color from '@tiptap/extension-color'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -26,7 +30,7 @@ import { toast } from 'sonner'
 import { stopwords } from '@/lib/stopwords'
 import { useSidebarStore } from '@/store/useSidebarStore'
 import { useDocumentStore } from '@/store/useDocumentStore'
-import { sociDictionary } from '@/lib/dictionary'
+import { academicDictionary } from '@/lib/dictionary'
 import { EditorToolbar } from './EditorToolbar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -104,7 +108,7 @@ export default function EditorTexto() {
       }),
       Underline,
       Placeholder.configure({
-        placeholder: 'Escribe tu texto sociológico aquí...',
+        placeholder: 'Escribe tu texto académico aquí...',
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
@@ -129,6 +133,12 @@ export default function EditorTexto() {
       TextStyle,
       FontFamily,
       Color,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     editorProps: {
       attributes: {
@@ -166,7 +176,7 @@ export default function EditorTexto() {
         const text = editor.state.doc.textBetween(from, to).trim().toLowerCase();
         // Check for exact match or match inside the dictionary keys
         // Simple exact match first
-        const definition = sociDictionary[text];
+        const definition = academicDictionary[text];
 
         if (definition) {
             setDefinition({ term: text, ...definition });
@@ -193,16 +203,56 @@ export default function EditorTexto() {
     }
   }, [currentDocId, editor]);
 
-  const handleExport = () => {
+  const handleExportHTML = () => {
     if (!editor) return;
     const html = editor.getHTML();
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'socioflow-documento.html';
+    a.download = 'documento.html';
     a.click();
-    toast.success("Documento descargado");
+    toast.success("HTML descargado");
+  }
+
+  const handleExportMarkdown = () => {
+    if (!editor) return;
+    // Simple HTML to Markdown conversion
+    let markdown = editor.getHTML();
+
+    // Convert common HTML tags to Markdown
+    markdown = markdown
+      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+      .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+      .replace(/<u[^>]*>(.*?)<\/u>/gi, '_$1_')
+      .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n\n')
+      .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
+      .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+      .replace(/<ul[^>]*>(.*?)<\/ul>/gi, '$1\n')
+      .replace(/<ol[^>]*>(.*?)<\/ol>/gi, '$1\n')
+      .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+      .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'documento.md';
+    a.click();
+    toast.success("Markdown descargado");
   }
 
   const handleEvaluate = async () => {
@@ -812,7 +862,7 @@ export default function EditorTexto() {
                             Evaluación del Profesor
                         </DialogTitle>
                         <DialogDescription>
-                            Análisis automático de estructura, tono y contenido sociológico.
+                            Análisis automático de estructura, tono y contenido académico.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -895,9 +945,29 @@ export default function EditorTexto() {
                 </DialogContent>
             </Dialog>
 
-            <Button size="icon" variant="ghost" onClick={handleExport} title="Exportar HTML">
-                <Download className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
-            </Button>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button size="icon" variant="ghost" title="Exportar">
+                        <Download className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-40 p-1">
+                    <div className="grid gap-1">
+                        <button
+                            onClick={handleExportHTML}
+                            className="text-left px-2 py-1.5 text-sm hover:bg-zinc-100 rounded"
+                        >
+                            Exportar HTML
+                        </button>
+                        <button
+                            onClick={handleExportMarkdown}
+                            className="text-left px-2 py-1.5 text-sm hover:bg-zinc-100 rounded"
+                        >
+                            Exportar Markdown
+                        </button>
+                    </div>
+                </PopoverContent>
+            </Popover>
             <Button size="icon" variant="ghost" onClick={() => window.print()} title="Imprimir / PDF">
                 <Printer className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
             </Button>

@@ -16,7 +16,7 @@ export default function Home() {
 
       {/* Right Sidebar */}
       <aside className="w-80 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hidden xl:block print:hidden p-6 h-screen sticky top-0 overflow-y-auto transition-all duration-300">
-        <h2 className="font-sans font-bold text-zinc-800 dark:text-zinc-100 mb-4 text-sm uppercase tracking-wider">Asistente Sociológico</h2>
+        <h2 className="font-sans font-bold text-zinc-800 dark:text-zinc-100 mb-4 text-sm uppercase tracking-wider">Asistente Académico</h2>
 
         {activeDefinition ? (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -34,7 +34,7 @@ export default function Home() {
                     )}
                 </div>
                 <div className="text-xs text-zinc-400 text-center">
-                    Definición cargada del Diccionario Sociológico
+                    {activeDefinition.field ? `Campo: ${activeDefinition.field}` : 'Definición académica'}
                 </div>
             </div>
         ) : (
@@ -43,9 +43,9 @@ export default function Home() {
                     Bienvenido a <strong>Juord</strong>.
                 </p>
                 <ul className="mt-4 space-y-2 text-xs text-zinc-500 list-disc pl-4">
-                    <li>Selecciona texto para <strong>formalizar</strong>.</li>
+                    <li>Selecciona texto para <strong>formalizar</strong> o <strong>analizar</strong>.</li>
                     <li>Usa el icono <span className="inline-block align-middle bg-zinc-200 rounded-full w-4 h-4"></span> para <strong>conectores</strong>.</li>
-                    <li>Selecciona conceptos clave (ej: <em>anomia, habitus</em>) para ver su definición aquí.</li>
+                    <li>Selecciona términos académicos (ej: <em>metodología, paradigma</em>) para ver su definición aquí.</li>
                 </ul>
             </div>
         )}
