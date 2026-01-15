@@ -13,17 +13,19 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
+import Youtube from '@tiptap/extension-youtube'
 import { TextStyle } from '@tiptap/extension-text-style'
 import FontFamily from '@tiptap/extension-font-family'
 import Color from '@tiptap/extension-color'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Wand2, Repeat, Loader2, GraduationCap, BookOpen, PenTool, Search, Link as LinkIcon, ArrowRight, Download } from 'lucide-react'
-import { useState } from 'react'
+import { Wand2, Repeat, Loader2, GraduationCap, BookOpen, PenTool, Search, Link as LinkIcon, ArrowRight, Download, Printer } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { stopwords } from '@/lib/stopwords'
 import { useSidebarStore } from '@/store/useSidebarStore'
+import { useDocumentStore } from '@/store/useDocumentStore'
 import { sociDictionary } from '@/lib/dictionary'
 import { EditorToolbar } from './EditorToolbar'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -41,6 +43,16 @@ type Evaluation = {
 
 export default function EditorTexto() {
   const { setDefinition } = useSidebarStore();
+  const { currentDocId, updateDocument, checkLegacyData } = useDocumentStore();
+  const currentDocIdRef = useRef(currentDocId);
+
+  useEffect(() => {
+      checkLegacyData();
+  }, [checkLegacyData]);
+
+  useEffect(() => {
+      currentDocIdRef.current = currentDocId;
+  }, [currentDocId]);
 
   // Formalizer State
   const [isLoading, setIsLoading] = useState(false)
@@ -101,27 +113,33 @@ export default function EditorTexto() {
         autolink: true,
       }),
       Image,
+      Youtube.configure({
+        controls: false,
+      }),
       TextStyle,
       FontFamily,
       Color,
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-lg prose-stone dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-200px)] font-serif px-8 py-4',
+        class: 'prose prose-lg prose-stone dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-200px)] print:min-h-0 font-serif px-8 py-4 print:px-0 print:py-0',
       },
     },
     content: '<p>La sociedad moderna se caracteriza por...</p>',
     immediatelyRender: false,
     onCreate: ({ editor }) => {
-        // Persistence: Load
-        const saved = localStorage.getItem('socioflow-content')
-        if (saved) {
-            editor.commands.setContent(saved)
+        // Load from store
+        const state = useDocumentStore.getState();
+        if (state.currentDocId) {
+             const doc = state.documents.find(d => d.id === state.currentDocId);
+             if (doc) editor.commands.setContent(doc.content);
         }
     },
     onUpdate: ({ editor }) => {
-        // Persistence: Save
-        localStorage.setItem('socioflow-content', editor.getHTML())
+        // Persistence: Save to store
+        if (currentDocIdRef.current) {
+            updateDocument(currentDocIdRef.current, { content: editor.getHTML() });
+        }
     },
     onSelectionUpdate: ({ editor }) => {
         const { from, to, empty } = editor.state.selection;
@@ -154,6 +172,16 @@ export default function EditorTexto() {
         }
     }
   })
+
+  // Sync editor with store when switching documents
+  useEffect(() => {
+    if (editor && currentDocId) {
+        const doc = useDocumentStore.getState().documents.find(d => d.id === currentDocId);
+        if (doc && editor.getHTML() !== doc.content) {
+             editor.commands.setContent(doc.content);
+        }
+    }
+  }, [currentDocId, editor]);
 
   const handleExport = () => {
     if (!editor) return;
@@ -415,7 +443,7 @@ export default function EditorTexto() {
       {editor && (
         <FloatingMenu
             editor={editor}
-            className="flex items-center -ml-16"
+            className="flex items-center -ml-16 print:hidden"
         >
              <Popover open={isConnectorOpen} onOpenChange={(open) => { setIsConnectorOpen(open); if(open) handleFetchConnectors(); }}>
                 <PopoverTrigger asChild>
@@ -464,7 +492,7 @@ export default function EditorTexto() {
       {editor && (
         <BubbleMenu
           editor={editor}
-          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-lg p-1 flex gap-1 items-center z-50 max-w-[600px]"
+          className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-lg p-1 flex gap-1 items-center z-50 max-w-[600px] print:hidden"
         >
           {/* Formalizer Popover */}
           <Popover open={isPopoverOpen} onOpenChange={(open) => { setIsPopoverOpen(open); if(open) setIsRepetitionOpen(false); }}>
@@ -611,7 +639,7 @@ export default function EditorTexto() {
       )}
 
       {/* Editor Content */}
-      <div className="relative bg-white dark:bg-zinc-950 min-h-screen shadow-sm border-x border-zinc-100 dark:border-zinc-900 mx-auto max-w-4xl flex flex-col">
+      <div className="relative bg-white dark:bg-zinc-950 min-h-screen shadow-sm border-x border-zinc-100 dark:border-zinc-900 mx-auto max-w-4xl flex flex-col print:max-w-none print:shadow-none print:border-none print:min-h-0">
          {/* Toolbar */}
          <EditorToolbar editor={editor} />
 
@@ -720,6 +748,9 @@ export default function EditorTexto() {
 
             <Button size="icon" variant="ghost" onClick={handleExport} title="Exportar HTML">
                 <Download className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={() => window.print()} title="Imprimir / PDF">
+                <Printer className="w-4 h-4 text-zinc-400 hover:text-indigo-600" />
             </Button>
         </div>
         <div className="flex-1">

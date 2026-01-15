@@ -2,19 +2,20 @@
 
 import EditorTexto from '@/components/editor/EditorTexto';
 import { useSidebarStore } from '@/store/useSidebarStore';
+import { Juappy } from '@/components/Juappy';
 
 export default function Home() {
   const { activeDefinition } = useSidebarStore();
 
   return (
-    <main className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <main className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950 print:block print:bg-white">
       {/* Main Content (Editor) */}
-      <div className="flex-1 flex justify-center p-4 md:p-8 overflow-y-auto">
+      <div className="flex-1 flex justify-center p-4 md:p-8 overflow-y-auto print:overflow-visible print:p-0 print:block print:h-auto">
         <EditorTexto />
       </div>
 
       {/* Right Sidebar */}
-      <aside className="w-80 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hidden xl:block p-6 h-screen sticky top-0 overflow-y-auto transition-all duration-300">
+      <aside className="w-80 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hidden xl:block print:hidden p-6 h-screen sticky top-0 overflow-y-auto transition-all duration-300">
         <h2 className="font-sans font-bold text-zinc-800 dark:text-zinc-100 mb-4 text-sm uppercase tracking-wider">Asistente Sociológico</h2>
 
         {activeDefinition ? (
@@ -49,6 +50,8 @@ export default function Home() {
             </div>
         )}
       </aside>
+
+      <Juappy />
     </main>
   );
 }
