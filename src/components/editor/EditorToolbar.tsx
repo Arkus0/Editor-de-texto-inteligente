@@ -38,6 +38,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { FileMenu } from './FileMenu'
+import { BibliographyManager } from '../bibliography/BibliographyManager'
 
 interface EditorToolbarProps {
   editor: Editor | null
@@ -80,6 +81,10 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2 print:hidden">
 
       <FileMenu />
+
+      <Separator orientation="vertical" className="h-6 mx-1" />
+
+      <BibliographyManager editor={editor} />
 
       <Separator orientation="vertical" className="h-6 mx-1" />
 
