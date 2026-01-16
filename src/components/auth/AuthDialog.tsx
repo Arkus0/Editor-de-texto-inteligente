@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -19,11 +19,10 @@ export function AuthDialog() {
 
     const { syncWithCloud } = useDocumentStore();
 
-    // We should also sync references, but I can't import useBibliographyStore inside useEffect cleanly
-    // without triggering circular deps or rule violations if I am not careful?
-    // Actually it is fine.
-
     useEffect(() => {
+        const supabase = getSupabase();
+        if (!supabase) return;
+
         // Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null)
@@ -36,12 +35,7 @@ export function AuthDialog() {
             if (session?.user) {
                 // Trigger store sync when user logs in
                 syncWithCloud(session.user.id);
-                // Also trigger references sync?
-                // Ideally yes, but let's keep it simple for now or import it dynamically?
-                // Or just trust the store to do it if we exposed a method.
-                // We exposed `syncReferencesWithCloud`.
-                // Let's do a quick lazy import or just ignore for this step to avoid complex hooks issues.
-                // Actually, let's fix it properly.
+                // Also trigger references sync
                 import('@/store/useBibliographyStore').then(({ useBibliographyStore }) => {
                     useBibliographyStore.getState().syncReferencesWithCloud();
                 });
@@ -53,6 +47,12 @@ export function AuthDialog() {
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault()
+        const supabase = getSupabase();
+        if (!supabase) {
+            toast.error('Supabase no está configurado')
+            return
+        }
+
         setLoading(true)
 
         try {
@@ -81,6 +81,9 @@ export function AuthDialog() {
     }
 
     const handleLogout = async () => {
+        const supabase = getSupabase();
+        if (!supabase) return;
+
         await supabase.auth.signOut()
         toast.info('Sesión cerrada')
     }
