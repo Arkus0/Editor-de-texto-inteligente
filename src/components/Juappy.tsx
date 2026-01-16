@@ -19,17 +19,13 @@ export function Juappy() {
     const plainText = currentContent.replace(/<[^>]+>/g, ' ');
 
     const [input, setInput] = useState('');
-    const { messages, status, sendMessage } = useChat({
-        body: {
-            context: plainText
-        }
-    });
+    const { messages, status, sendMessage } = useChat();
     const isLoading = status === 'streaming' || status === 'submitted';
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim()) return;
-        sendMessage({ text: input });
+        sendMessage({ text: input }, { body: { context: plainText } });
         setInput('');
     };
 
