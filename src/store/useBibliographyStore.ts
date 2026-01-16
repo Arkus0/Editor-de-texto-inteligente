@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 
 export type ReferenceType = 'book' | 'article' | 'web';
 
@@ -29,6 +29,9 @@ export const useBibliographyStore = create<BibliographyStore>()(
         set((state) => ({ references: [...state.references, newRef] }));
 
         // Cloud Save
+        const supabase = getSupabase();
+        if (!supabase) return;
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 supabase.from('references').upsert({
@@ -45,6 +48,9 @@ export const useBibliographyStore = create<BibliographyStore>()(
         set((state) => ({ references: state.references.filter((r) => r.id !== id) }));
 
         // Cloud Delete
+        const supabase = getSupabase();
+        if (!supabase) return;
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 supabase.from('references').delete().eq('id', id);
@@ -52,6 +58,9 @@ export const useBibliographyStore = create<BibliographyStore>()(
         });
       },
       syncReferencesWithCloud: async () => {
+          const supabase = getSupabase();
+          if (!supabase) return;
+
           const { data: { session } } = await supabase.auth.getSession();
           if (!session?.user) return;
 

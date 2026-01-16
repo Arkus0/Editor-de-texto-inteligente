@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 
 export type Document = {
   id: string;
@@ -80,6 +80,9 @@ export const useDocumentStore = create<DocumentStore>()(
         });
 
         // Delete from cloud
+        const supabase = getSupabase();
+        if (!supabase) return;
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 supabase.from('documents').delete().eq('id', id).then(res => {
@@ -122,6 +125,9 @@ export const useDocumentStore = create<DocumentStore>()(
 
       syncWithCloud: async (userId: string) => {
           if (!userId) return;
+
+          const supabase = getSupabase();
+          if (!supabase) return;
 
           // 1. Fetch cloud documents
           const { data: cloudDocs, error } = await supabase
@@ -173,6 +179,9 @@ export const useDocumentStore = create<DocumentStore>()(
 
       syncLocalToCloud: async (doc: Document) => {
           // Check if logged in
+          const supabase = getSupabase();
+          if (!supabase) return;
+
           const { data: { session } } = await supabase.auth.getSession();
           if (!session?.user) return;
 
