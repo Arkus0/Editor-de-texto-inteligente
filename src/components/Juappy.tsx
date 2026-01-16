@@ -19,19 +19,18 @@ export function Juappy() {
     const plainText = currentContent.replace(/<[^>]+>/g, ' ');
 
     const [input, setInput] = useState('');
-    const { messages, append, status } = useChat({
+    const { messages, status, sendMessage } = useChat({
         body: {
             context: plainText
         }
     });
     const isLoading = status === 'streaming' || status === 'submitted';
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim()) return;
-        const userMessage = input;
+        sendMessage({ text: input });
         setInput('');
-        await append({ role: 'user', content: userMessage });
     };
 
     const scrollRef = useRef<HTMLDivElement>(null);
