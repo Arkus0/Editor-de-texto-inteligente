@@ -18,11 +18,16 @@ export function Juappy() {
     // Strip HTML for context
     const plainText = currentContent.replace(/<[^>]+>/g, ' ');
 
-    const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-        body: {
-            context: plainText
-        }
-    });
+    const [input, setInput] = useState('');
+    const { messages, status, sendMessage } = useChat();
+    const isLoading = status === 'streaming' || status === 'submitted';
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input.trim()) return;
+        sendMessage({ text: input }, { body: { context: plainText } });
+        setInput('');
+    };
 
     const scrollRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -78,7 +83,7 @@ export function Juappy() {
                     <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-zinc-100 flex gap-2 shrink-0">
                         <Input
                             value={input}
-                            onChange={handleInputChange}
+                            onChange={(e) => setInput(e.target.value)}
                             placeholder="Escribe aquí..."
                             className="text-sm focus-visible:ring-indigo-500 rounded-full px-4"
                         />
