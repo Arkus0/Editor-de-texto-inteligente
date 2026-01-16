@@ -65,7 +65,7 @@ export function Juappy() {
                                      ? 'bg-indigo-600 text-white rounded-br-none'
                                      : 'bg-white border border-zinc-200 text-zinc-800 shadow-sm rounded-bl-none'
                                  }`}>
-                                     {m.content}
+                                     {m.parts.filter(p => p.type === 'text').map((p, i) => <span key={i}>{p.text}</span>)}
                                  </div>
                              </div>
                          ))}
