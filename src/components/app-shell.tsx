@@ -3,6 +3,14 @@
 import * as React from "react"
 import { History, Settings } from "lucide-react"
 import { toast } from "sonner"
+import { useEditor } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import TextAlign from "@tiptap/extension-text-align"
+import Image from "@tiptap/extension-image"
+import { TableKit } from "@tiptap/extension-table"
+import { TextStyleKit } from "@tiptap/extension-text-style"
+import Highlight from "@tiptap/extension-highlight"
+import Placeholder from "@tiptap/extension-placeholder"
 
 import { Button } from "@/components/ui/button"
 import { PromptPanel } from "@/components/left-panel/prompt-panel"
@@ -11,6 +19,7 @@ import { SettingsDrawer } from "@/components/settings/settings-drawer"
 import { HistorySidebar } from "@/components/history/history-sidebar"
 import { extractTextFromFile } from "@/lib/file-extract"
 import { chatAboutDocumentStream, generateModelAnswerStream, type ChatTurn } from "@/lib/gemini"
+import { markdownToHtml, htmlToMarkdown } from "@/lib/markdown"
 import { useSettingsStore } from "@/store/useSettingsStore"
 import { useHistoryStore, type HistoryEntry } from "@/store/useHistoryStore"
 import { useSystemPromptStore } from "@/store/useSystemPromptStore"
@@ -30,6 +39,7 @@ export interface ChatMessage {
   role: "user" | "model"
   content: string
   quotedFragment?: string
+  quotedRange?: { from: number; to: number }
   status: "streaming" | "done" | "error"
 }
 
@@ -56,11 +66,45 @@ export function AppShell() {
   const [chatOpen, setChatOpen] = React.useState(false)
   const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([])
   const [pendingFragment, setPendingFragment] = React.useState<string | null>(null)
+  const [pendingRange, setPendingRange] = React.useState<{ from: number; to: number } | null>(null)
   const [isChatSending, setIsChatSending] = React.useState(false)
 
   const settings = useSettingsStore()
   const addHistoryEntry = useHistoryStore((s) => s.add)
   const addRecentSystemPrompt = useSystemPromptStore((s) => s.addRecent)
+
+  const markdownSyncTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    editable: false,
+    content: "",
+    extensions: [
+      StarterKit.configure({ link: { openOnClick: false } }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Image.configure({ allowBase64: true }),
+      TableKit.configure({ table: { resizable: false } }),
+      TextStyleKit,
+      Highlight.configure({ multicolor: true }),
+      Placeholder.configure({ placeholder: "El documento generado aparecerá aquí…" }),
+    ],
+    editorProps: {
+      attributes: {
+        class:
+          "prose prose-slate max-w-none font-serif text-[1.05rem] leading-[1.9] prose-p:my-4 prose-headings:font-sans focus:outline-none min-h-[50vh]",
+      },
+    },
+    onUpdate: ({ editor: updatedEditor }) => {
+      if (markdownSyncTimeout.current) clearTimeout(markdownSyncTimeout.current)
+      markdownSyncTimeout.current = setTimeout(() => {
+        setResponseText(htmlToMarkdown(updatedEditor.getHTML()))
+      }, 400)
+    },
+  })
+
+  React.useEffect(() => {
+    editor?.setEditable(status === "done")
+  }, [editor, status])
 
   const hasReadyAttachment = attachments.some((a) => a.status === "ready")
 
@@ -98,6 +142,7 @@ export function AppShell() {
   const resetChat = () => {
     setChatMessages([])
     setPendingFragment(null)
+    setPendingRange(null)
     setChatOpen(false)
   }
 
@@ -136,6 +181,7 @@ export function AppShell() {
         (accumulated) => setResponseText(accumulated)
       )
       setStatus("done")
+      editor?.commands.setContent(markdownToHtml(finalText), { emitUpdate: false })
       addHistoryEntry({
         title: "",
         prompt,
@@ -159,10 +205,12 @@ export function AppShell() {
     setAttachments([])
     resetChat()
     setHistoryOpen(false)
+    editor?.commands.setContent(markdownToHtml(entry.response), { emitUpdate: false })
   }
 
-  const handleSelectFragment = (fragment: string) => {
+  const handleSelectFragment = (fragment: string, range: { from: number; to: number }) => {
     setPendingFragment(fragment)
+    setPendingRange(range)
     setChatOpen(true)
   }
 
@@ -179,11 +227,14 @@ export function AppShell() {
       .filter((m) => m.status === "done")
       .map((m) => ({ role: m.role, content: m.content }))
 
+    const activeRange = quotedFragment ? pendingRange ?? undefined : undefined
+
     const userChatMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: userMessage,
       quotedFragment,
+      quotedRange: activeRange,
       status: "done",
     }
     const modelMessageId = crypto.randomUUID()
@@ -192,11 +243,13 @@ export function AppShell() {
       role: "model",
       content: "",
       quotedFragment,
+      quotedRange: activeRange,
       status: "streaming",
     }
 
     setChatMessages((prev) => [...prev, userChatMessage, modelChatMessage])
     setPendingFragment(null)
+    setPendingRange(null)
     setIsChatSending(true)
 
     try {
@@ -239,18 +292,44 @@ export function AppShell() {
     }
   }
 
-  const handleApplyEdit = (quotedFragment: string, replacement: string) => {
-    const index = responseText.indexOf(quotedFragment)
-    if (index === -1) {
+  const handleApplyEdit = (
+    quotedFragment: string,
+    replacement: string,
+    quotedRange?: { from: number; to: number }
+  ) => {
+    if (!editor) return
+    const replacementHtml = markdownToHtml(replacement.trim())
+
+    const docSize = editor.state.doc.content.size
+    if (
+      quotedRange &&
+      quotedRange.to <= docSize &&
+      editor.state.doc.textBetween(quotedRange.from, quotedRange.to, " ") === quotedFragment
+    ) {
+      editor.chain().focus().insertContentAt(quotedRange, replacementHtml).run()
+      toast.success("Fragmento actualizado en el documento")
+      return
+    }
+
+    let found: { from: number; to: number } | null = null
+    editor.state.doc.descendants((node, pos) => {
+      if (found || !node.isText || !node.text) return true
+      const idx = node.text.indexOf(quotedFragment)
+      if (idx !== -1) {
+        found = { from: pos + idx, to: pos + idx + quotedFragment.length }
+        return false
+      }
+      return true
+    })
+
+    if (found) {
+      editor.chain().focus().insertContentAt(found, replacementHtml).run()
+      toast.success("Fragmento actualizado en el documento")
+    } else {
       toast.error("No se pudo localizar el fragmento en el documento", {
         description: "El texto pudo cambiar desde que lo seleccionaste. Cópialo manualmente.",
       })
-      return
     }
-    const updated =
-      responseText.slice(0, index) + replacement.trim() + responseText.slice(index + quotedFragment.length)
-    setResponseText(updated)
-    toast.success("Fragmento actualizado en el documento")
   }
 
   if (!isClient) return null
@@ -289,6 +368,7 @@ export function AppShell() {
         </div>
         <div className="min-h-0">
           <ResponseCanvas
+            editor={editor}
             status={status}
             responseText={responseText}
             errorMessage={errorMessage}
@@ -297,7 +377,10 @@ export function AppShell() {
             chatMessages={chatMessages}
             pendingFragment={pendingFragment}
             onSelectFragment={handleSelectFragment}
-            onClearPendingFragment={() => setPendingFragment(null)}
+            onClearPendingFragment={() => {
+              setPendingFragment(null)
+              setPendingRange(null)
+            }}
             onSendChatMessage={handleSendChatMessage}
             onApplyEdit={handleApplyEdit}
             isChatSending={isChatSending}

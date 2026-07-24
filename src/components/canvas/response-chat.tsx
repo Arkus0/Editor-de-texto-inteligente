@@ -14,7 +14,7 @@ interface ResponseChatProps {
   pendingFragment: string | null
   onClearPendingFragment: () => void
   onSend: (message: string, quotedFragment?: string) => void
-  onApplyEdit: (quotedFragment: string, replacement: string) => void
+  onApplyEdit: (quotedFragment: string, replacement: string, quotedRange?: { from: number; to: number }) => void
   isSending: boolean
 }
 
@@ -52,7 +52,7 @@ export function ResponseChat({
   }
 
   return (
-    <div className="flex h-72 shrink-0 flex-col border-t border-border bg-card">
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-card">
       <ScrollArea className="flex-1 px-4 py-3">
         {messages.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted-foreground">
@@ -87,7 +87,7 @@ export function ResponseChat({
                       size="sm"
                       variant="secondary"
                       className="mt-2 h-7 text-xs"
-                      onClick={() => onApplyEdit(message.quotedFragment as string, message.content)}
+                      onClick={() => onApplyEdit(message.quotedFragment as string, message.content, message.quotedRange)}
                     >
                       <Wand2 className="h-3 w-3" />
                       Aplicar al documento
