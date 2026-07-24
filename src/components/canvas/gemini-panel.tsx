@@ -9,6 +9,7 @@ import {
   Languages,
   Loader2,
   MessageSquare,
+  Paperclip,
   Quote,
   Replace,
   TextCursorInput,
@@ -26,7 +27,7 @@ import {
   TRANSLATE_LANGUAGES,
   translateInstruction,
 } from "@/lib/ai-actions"
-import type { ChatMessage, MessageKind } from "@/components/app-shell"
+import type { Attachment, ChatMessage, MessageKind } from "@/components/app-shell"
 
 interface GeminiPanelProps {
   messages: ChatMessage[]
@@ -36,8 +37,13 @@ interface GeminiPanelProps {
   onApplyEdit: (quotedFragment: string, replacement: string, quotedRange?: { from: number; to: number }) => void
   onInsert: (text: string) => void
   onReplaceAll: (text: string) => void
+  attachments: Attachment[]
+  onFilesSelected: (files: File[]) => void
+  onRemoveAttachment: (id: string) => void
   isSending: boolean
 }
+
+const ACCEPTED_CHAT_FILES = ".pdf,.docx,.txt"
 
 type PanelTab = "selection" | "document" | "translate"
 
@@ -55,12 +61,24 @@ export function GeminiPanel({
   onApplyEdit,
   onInsert,
   onReplaceAll,
+  attachments,
+  onFilesSelected,
+  onRemoveAttachment,
   isSending,
 }: GeminiPanelProps) {
   const [input, setInput] = React.useState("")
   const [tab, setTab] = React.useState<PanelTab>("selection")
   const [language, setLanguage] = React.useState<string>(TRANSLATE_LANGUAGES[0])
   const scrollRef = React.useRef<HTMLDivElement>(null)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = Array.from(e.clipboardData.files)
+    if (files.length > 0) {
+      e.preventDefault()
+      onFilesSelected(files)
+    }
+  }
 
   React.useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
@@ -107,8 +125,8 @@ export function GeminiPanel({
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <MessageSquare className="h-6 w-6 text-muted-foreground/50" />
             <p className="max-w-[240px] text-xs text-muted-foreground">
-              Selecciona texto en el documento y elige una acción, pide algo sobre todo el
-              documento, o escribe abajo para conversar con Gemini.
+              Selecciona texto y elige una acción, pide algo sobre todo el documento, adjunta o
+              pega un PDF como referencia, o escribe abajo para conversar con Gemini.
             </p>
           </div>
         ) : (
@@ -185,6 +203,44 @@ export function GeminiPanel({
       </ScrollArea>
 
       <div className="border-t border-border p-3">
+        {attachments.length > 0 && (
+          <div className="mb-2 space-y-1.5">
+            <p className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+              <Paperclip className="h-3 w-3" />
+              Documentos de referencia
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {attachments.map((att) => (
+                <span
+                  key={att.id}
+                  className="flex max-w-full items-center gap-1 rounded-full border border-border bg-muted px-2 py-1 text-xs"
+                  title={att.name}
+                >
+                  {att.status === "extracting" ? (
+                    <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                  ) : (
+                    <FileText
+                      className={cn(
+                        "h-3 w-3 shrink-0",
+                        att.status === "error" ? "text-destructive" : "text-primary"
+                      )}
+                    />
+                  )}
+                  <span className="max-w-[140px] truncate">{att.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveAttachment(att.id)}
+                    className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label={`Quitar ${att.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {pendingFragment && (
           <div className="mb-2 flex items-start gap-2 rounded-md border border-border bg-accent/50 px-2 py-1.5 text-xs">
             <Quote className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
@@ -297,9 +353,32 @@ export function GeminiPanel({
         )}
 
         <div className="flex items-end gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ACCEPTED_CHAT_FILES}
+            className="hidden"
+            onChange={(e) => {
+              const files = Array.from(e.target.files ?? [])
+              if (files.length > 0) onFilesSelected(files)
+              e.target.value = ""
+            }}
+          />
+          <Button
+            size="icon"
+            variant="outline"
+            className="shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Adjuntar PDF, DOCX o TXT"
+            title="Adjuntar PDF, DOCX o TXT"
+          >
+            <Paperclip />
+          </Button>
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onPaste={handlePaste}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault()
@@ -309,7 +388,7 @@ export function GeminiPanel({
             placeholder={
               pendingFragment
                 ? "Indica qué hacer con el fragmento…"
-                : "Pregunta o pide algo sobre el texto…"
+                : "Pregunta, pide algo o pega un PDF…"
             }
             className="min-h-[40px] resize-none text-sm"
             rows={1}

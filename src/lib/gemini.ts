@@ -120,18 +120,26 @@ export interface ChatAboutDocumentParams {
   history: ChatTurn[];
   userMessage: string;
   quotedFragment?: string;
+  /** Texto extraído de los documentos adjuntos (PDF/DOCX/TXT) usados como referencia. */
+  attachmentsContext?: string;
 }
 
-const CHAT_SYSTEM_INSTRUCTION = (documentText: string) => `Eres el mismo ensayista académico que redactó el siguiente texto y ahora conversas con el autor para revisarlo y mejorarlo.
+const CHAT_SYSTEM_INSTRUCTION = (documentText: string, attachmentsContext?: string) => {
+  const referenceBlock = attachmentsContext?.trim()
+    ? `\n\nMATERIAL DE REFERENCIA ADJUNTO (documentos que el usuario ha adjuntado; utilízalos como fuente cuando el usuario pregunte por ellos o pida basarse en ellos):\n"""\n${attachmentsContext.trim()}\n"""`
+    : "";
+
+  return `Eres el mismo ensayista académico que redactó el siguiente texto y ahora conversas con el autor para revisarlo y mejorarlo.
 
 TEXTO ACTUAL:
 """
 ${documentText}
-"""
+"""${referenceBlock}
 
 Cuando el usuario cite un fragmento y pida reescribirlo, ampliarlo, acortarlo, cambiar su tono o corregirlo, responde ÚNICAMENTE con el texto de reemplazo del fragmento, en prosa académica continua, sin comillas, sin comentarios ni explicaciones adicionales, listo para sustituir el fragmento original tal cual.
 
-Cuando el usuario pida una opinión, una explicación o haga una pregunta general sobre el texto (sin pedir explícitamente una reescritura), responde de forma conversacional, breve y precisa, sin reescribir nada.`;
+Cuando el usuario pida una opinión, una explicación o haga una pregunta general sobre el texto o el material de referencia (sin pedir explícitamente una reescritura), responde de forma conversacional, breve y precisa, sin reescribir nada.`;
+};
 
 export async function chatAboutDocumentStream(
   {
@@ -144,6 +152,7 @@ export async function chatAboutDocumentStream(
     history,
     userMessage,
     quotedFragment,
+    attachmentsContext,
   }: ChatAboutDocumentParams,
   onChunk: (accumulatedText: string) => void,
   signal?: AbortSignal
@@ -163,7 +172,7 @@ export async function chatAboutDocumentStream(
     model,
     contents,
     config: {
-      systemInstruction: CHAT_SYSTEM_INSTRUCTION(documentText),
+      systemInstruction: CHAT_SYSTEM_INSTRUCTION(documentText, attachmentsContext),
       temperature,
       topP,
       safetySettings: buildSafetySettings(unrestrictedMode),

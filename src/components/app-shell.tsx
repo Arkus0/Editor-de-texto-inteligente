@@ -272,6 +272,11 @@ export function AppShell() {
       .filter((m) => m.status === "done")
       .map((m) => ({ role: m.role, content: m.content }))
 
+    const attachmentsContext = attachments
+      .filter((a) => a.status === "ready" && a.text.trim())
+      .map((a) => `[Documento: ${a.name}]\n${a.text}`)
+      .join("\n\n---\n\n")
+
     const userChatMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
@@ -301,6 +306,7 @@ export function AppShell() {
           history,
           userMessage,
           quotedFragment,
+          attachmentsContext: attachmentsContext || undefined,
         },
         (accumulated) => {
           setChatMessages((prev) =>
@@ -507,6 +513,9 @@ export function AppShell() {
             onApplyEdit={handleApplyEdit}
             onInsert={handleInsert}
             onReplaceAll={handleReplaceAll}
+            attachments={attachments}
+            onFilesSelected={handleFilesSelected}
+            onRemoveAttachment={handleRemoveAttachment}
             isSending={isChatSending}
           />
         </AiSidePanel>
