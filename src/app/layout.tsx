@@ -16,8 +16,8 @@ const merriweather = Merriweather({
 });
 
 export const metadata: Metadata = {
-  title: "Juord",
-  description: "Editor Asistido para Sociólogos",
+  title: "Editor de Texto Inteligente",
+  description: "Entorno de redacción académica y generación de respuestas modélicas con Gemini",
 };
 
 export default function RootLayout({
