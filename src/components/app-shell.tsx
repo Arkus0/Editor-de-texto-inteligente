@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { History, Settings } from "lucide-react"
 import { toast } from "sonner"
 import { useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
@@ -12,19 +11,27 @@ import { TextStyleKit } from "@tiptap/extension-text-style"
 import Highlight from "@tiptap/extension-highlight"
 import Placeholder from "@tiptap/extension-placeholder"
 
-import { Button } from "@/components/ui/button"
-import { PromptPanel } from "@/components/left-panel/prompt-panel"
-import { ResponseCanvas } from "@/components/canvas/response-canvas"
+import { TitleBar, type ExportFormat } from "@/components/chrome/title-bar"
+import { StatusBar } from "@/components/chrome/status-bar"
+import { EditorToolbar } from "@/components/canvas/editor-toolbar"
+import { DocumentCanvas } from "@/components/canvas/document-canvas"
+import { AiSidePanel } from "@/components/canvas/ai-side-panel"
+import { GeminiPanel } from "@/components/canvas/gemini-panel"
 import { SettingsDrawer } from "@/components/settings/settings-drawer"
 import { HistorySidebar } from "@/components/history/history-sidebar"
 import { extractTextFromFile } from "@/lib/file-extract"
-import { chatAboutDocumentStream, generateModelAnswerStream, type ChatTurn } from "@/lib/gemini"
+import { chatAboutDocumentStream, generateModelAnswerStream, AVAILABLE_MODELS, type ChatTurn } from "@/lib/gemini"
+import { DOCUMENT_ACTIONS, SELECTION_ACTIONS } from "@/lib/ai-actions"
 import { markdownToHtml, htmlToMarkdown } from "@/lib/markdown"
+import { buildDocumentAst } from "@/lib/export/document-ast"
+import { downloadBlob } from "@/lib/export/download"
 import { useSettingsStore } from "@/store/useSettingsStore"
 import { useHistoryStore, type HistoryEntry } from "@/store/useHistoryStore"
 import { useSystemPromptStore } from "@/store/useSystemPromptStore"
 
 export type GenerationStatus = "idle" | "streaming" | "done" | "error"
+export type EditorMode = "welcome" | "streaming" | "editing"
+export type MessageKind = "chat" | "selection" | "document"
 
 export interface Attachment {
   id: string
@@ -38,6 +45,7 @@ export interface ChatMessage {
   id: string
   role: "user" | "model"
   content: string
+  kind?: MessageKind
   quotedFragment?: string
   quotedRange?: { from: number; to: number }
   status: "streaming" | "done" | "error"
@@ -46,11 +54,12 @@ export interface ChatMessage {
 const emptySubscribe = () => () => {}
 
 function useIsClient() {
-  return React.useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  )
+  return React.useSyncExternalStore(emptySubscribe, () => true, () => false)
+}
+
+function slugifyFilename(name: string): string {
+  const clean = name.trim().replace(/\.[^.]+$/, "") || "documento"
+  return clean.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").toLowerCase() || "documento"
 }
 
 export function AppShell() {
@@ -58,8 +67,12 @@ export function AppShell() {
   const [prompt, setPrompt] = React.useState("")
   const [attachments, setAttachments] = React.useState<Attachment[]>([])
   const [status, setStatus] = React.useState<GenerationStatus>("idle")
+  const [mode, setMode] = React.useState<EditorMode>("welcome")
   const [responseText, setResponseText] = React.useState("")
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
+  const [docName, setDocName] = React.useState("Documento sin título")
+  const [isExporting, setIsExporting] = React.useState(false)
+
   const [settingsOpen, setSettingsOpen] = React.useState(false)
   const [historyOpen, setHistoryOpen] = React.useState(false)
 
@@ -73,11 +86,13 @@ export function AppShell() {
   const addHistoryEntry = useHistoryStore((s) => s.add)
   const addRecentSystemPrompt = useSystemPromptStore((s) => s.addRecent)
 
+  const modelLabel = AVAILABLE_MODELS.find((m) => m.id === settings.model)?.label ?? settings.model
+
   const markdownSyncTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const editor = useEditor({
     immediatelyRender: false,
-    editable: false,
+    editable: true,
     content: "",
     extensions: [
       StarterKit.configure({ link: { openOnClick: false } }),
@@ -86,12 +101,12 @@ export function AppShell() {
       TableKit.configure({ table: { resizable: false } }),
       TextStyleKit,
       Highlight.configure({ multicolor: true }),
-      Placeholder.configure({ placeholder: "El documento generado aparecerá aquí…" }),
+      Placeholder.configure({ placeholder: "Escribe aquí o pídele a Gemini que redacte por ti…" }),
     ],
     editorProps: {
       attributes: {
         class:
-          "prose prose-slate max-w-none font-serif text-[1.05rem] leading-[1.9] prose-p:my-4 prose-headings:font-sans focus:outline-none min-h-[50vh]",
+          "prose prose-slate dark:prose-invert max-w-none font-serif text-[1.05rem] leading-[1.9] prose-p:my-4 prose-headings:font-sans focus:outline-none",
       },
     },
     onUpdate: ({ editor: updatedEditor }) => {
@@ -102,9 +117,17 @@ export function AppShell() {
     },
   })
 
+  // Atajo de teclado: Ctrl/⌘ + J alterna el panel de Gemini.
   React.useEffect(() => {
-    editor?.setEditable(status === "done")
-  }, [editor, status])
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") {
+        e.preventDefault()
+        setChatOpen((v) => !v)
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   const hasReadyAttachment = attachments.some((a) => a.status === "ready")
 
@@ -143,20 +166,25 @@ export function AppShell() {
     setChatMessages([])
     setPendingFragment(null)
     setPendingRange(null)
-    setChatOpen(false)
   }
 
-  const handleGenerate = async () => {
+  const requireApiKey = () => {
     if (!settings.apiKey.trim()) {
       toast.error("Falta la API Key de Google AI Studio", {
         description: "Configúrala en los ajustes de generación.",
       })
       setSettingsOpen(true)
-      return
+      return false
     }
+    return true
+  }
+
+  const handleGenerate = async () => {
+    if (!requireApiKey()) return
     if (!prompt.trim() && !hasReadyAttachment) return
 
     setStatus("streaming")
+    setMode("streaming")
     setResponseText("")
     setErrorMessage(null)
     resetChat()
@@ -181,6 +209,7 @@ export function AppShell() {
         (accumulated) => setResponseText(accumulated)
       )
       setStatus("done")
+      setMode("editing")
       editor?.commands.setContent(markdownToHtml(finalText), { emitUpdate: false })
       addHistoryEntry({
         title: "",
@@ -192,64 +221,77 @@ export function AppShell() {
       addRecentSystemPrompt(settings.systemPrompt)
     } catch (error) {
       setStatus("error")
+      setMode("welcome")
       setErrorMessage(error instanceof Error ? error.message : "Error desconocido al generar la respuesta.")
       toast.error("Error al generar la respuesta")
     }
+  }
+
+  const handleStartBlank = () => {
+    setStatus("idle")
+    setErrorMessage(null)
+    setMode("editing")
+    editor?.commands.setContent("", { emitUpdate: false })
+    setResponseText("")
+    requestAnimationFrame(() => editor?.commands.focus("start"))
   }
 
   const handleLoadHistoryEntry = (entry: HistoryEntry) => {
     setPrompt(entry.prompt)
     setResponseText(entry.response)
     setStatus("done")
+    setMode("editing")
     setErrorMessage(null)
     setAttachments([])
     resetChat()
     setHistoryOpen(false)
+    setDocName(entry.title?.trim() || "Documento sin título")
     editor?.commands.setContent(markdownToHtml(entry.response), { emitUpdate: false })
   }
 
-  const handleSelectFragment = (fragment: string, range: { from: number; to: number }) => {
+  const openPanelWithFragment = (fragment: string, range: { from: number; to: number }) => {
     setPendingFragment(fragment)
     setPendingRange(range)
     setChatOpen(true)
   }
 
-  const handleSendChatMessage = async (userMessage: string, quotedFragment?: string) => {
-    if (!settings.apiKey.trim()) {
-      toast.error("Falta la API Key de Google AI Studio", {
-        description: "Configúrala en los ajustes de generación.",
-      })
-      setSettingsOpen(true)
-      return
-    }
+  const handleSelectFragment = (fragment: string, range: { from: number; to: number }) => {
+    openPanelWithFragment(fragment, range)
+  }
+
+  // Núcleo común: añade el turno de usuario + placeholder del modelo y transmite la respuesta.
+  const streamChatTurn = async (
+    userMessage: string,
+    quotedFragment: string | undefined,
+    range: { from: number; to: number } | undefined,
+    kind: MessageKind
+  ) => {
+    if (!requireApiKey()) return
 
     const history: ChatTurn[] = chatMessages
       .filter((m) => m.status === "done")
       .map((m) => ({ role: m.role, content: m.content }))
 
-    const activeRange = quotedFragment ? pendingRange ?? undefined : undefined
+    const attachmentsContext = attachments
+      .filter((a) => a.status === "ready" && a.text.trim())
+      .map((a) => `[Documento: ${a.name}]\n${a.text}`)
+      .join("\n\n---\n\n")
 
     const userChatMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: userMessage,
+      kind,
       quotedFragment,
-      quotedRange: activeRange,
+      quotedRange: range,
       status: "done",
     }
     const modelMessageId = crypto.randomUUID()
-    const modelChatMessage: ChatMessage = {
-      id: modelMessageId,
-      role: "model",
-      content: "",
-      quotedFragment,
-      quotedRange: activeRange,
-      status: "streaming",
-    }
-
-    setChatMessages((prev) => [...prev, userChatMessage, modelChatMessage])
-    setPendingFragment(null)
-    setPendingRange(null)
+    setChatMessages((prev) => [
+      ...prev,
+      userChatMessage,
+      { id: modelMessageId, role: "model", content: "", kind, quotedFragment, quotedRange: range, status: "streaming" },
+    ])
     setIsChatSending(true)
 
     try {
@@ -264,6 +306,7 @@ export function AppShell() {
           history,
           userMessage,
           quotedFragment,
+          attachmentsContext: attachmentsContext || undefined,
         },
         (accumulated) => {
           setChatMessages((prev) =>
@@ -278,17 +321,59 @@ export function AppShell() {
       setChatMessages((prev) =>
         prev.map((m) =>
           m.id === modelMessageId
-            ? {
-                ...m,
-                content: error instanceof Error ? error.message : "Error al obtener la respuesta.",
-                status: "error",
-              }
+            ? { ...m, content: error instanceof Error ? error.message : "Error al obtener la respuesta.", status: "error" }
             : m
         )
       )
       toast.error("Error en la conversación con Gemini")
     } finally {
       setIsChatSending(false)
+    }
+  }
+
+  // Envío desde el panel: para acciones de selección usa el rango pendiente y lo limpia.
+  const handleSendChatMessage = (
+    userMessage: string,
+    quotedFragment: string | undefined,
+    kind: MessageKind
+  ) => {
+    const range = quotedFragment ? pendingRange ?? undefined : undefined
+    if (quotedFragment) {
+      setPendingFragment(null)
+      setPendingRange(null)
+    }
+    void streamChatTurn(userMessage, quotedFragment, range, kind)
+  }
+
+  // Acción rápida desde la burbuja de selección: cita el fragmento con su rango y dispara la instrucción.
+  const handleFragmentAction = (
+    fragment: string,
+    range: { from: number; to: number },
+    instruction: string
+  ) => {
+    setChatOpen(true)
+    void streamChatTurn(instruction, fragment, range, "selection")
+  }
+
+  // Acciones IA desde la cinta (ribbon).
+  const handleRibbonAiAction = (actionId: string) => {
+    setChatOpen(true)
+    if (actionId === "rewrite") {
+      if (!editor) return
+      const { from, to, empty } = editor.state.selection
+      if (empty) {
+        toast.info("Selecciona primero el texto que quieres reescribir")
+        return
+      }
+      const text = editor.state.doc.textBetween(from, to, " ").trim()
+      if (!text) return
+      const instruction = SELECTION_ACTIONS.find((a) => a.id === "rewrite")!.instruction()
+      void streamChatTurn(instruction, text, { from, to }, "selection")
+      return
+    }
+    const docAction = DOCUMENT_ACTIONS.find((a) => a.id === actionId)
+    if (docAction) {
+      void streamChatTurn(docAction.instruction(), undefined, undefined, "document")
     }
   }
 
@@ -332,61 +417,111 @@ export function AppShell() {
     }
   }
 
+  const handleInsert = (text: string) => {
+    if (!editor) return
+    const html = markdownToHtml(text.trim())
+    editor.chain().focus().insertContentAt(editor.state.doc.content.size, html).run()
+    toast.success("Insertado en el documento")
+  }
+
+  const handleReplaceAll = (text: string) => {
+    if (!editor) return
+    editor.commands.setContent(markdownToHtml(text.trim()))
+    editor.commands.focus("start")
+    toast.success("Documento reemplazado")
+  }
+
+  const handleExport = async (format: ExportFormat) => {
+    if (!editor) return
+    const base = slugifyFilename(docName)
+
+    if (format === "md" || format === "txt") {
+      downloadBlob(`${base}.${format}`, new Blob([responseText], { type: "text/plain;charset=utf-8" }))
+      return
+    }
+
+    setIsExporting(true)
+    try {
+      const ast = buildDocumentAst(editor.getJSON())
+      if (format === "pdf") {
+        const { exportDocumentToPdf } = await import("@/lib/export/exportPdf")
+        await exportDocumentToPdf(ast, `${base}.pdf`)
+      } else {
+        const { exportDocumentToDocx } = await import("@/lib/export/exportDocx")
+        await exportDocumentToDocx(ast, `${base}.docx`)
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error(format === "pdf" ? "No se pudo generar el PDF" : "No se pudo generar el documento Word")
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   if (!isClient) return null
+
+  const canExport = mode === "editing" && responseText.trim().length > 0
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <header className="flex shrink-0 items-center justify-between border-b border-border px-6 py-3">
-        <div>
-          <h1 className="text-sm font-semibold tracking-tight">Editor de Texto Inteligente</h1>
-          <p className="text-xs text-muted-foreground">Redacción académica y respuestas modélicas</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
-            <History />
-            Historial
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-            <Settings />
-            Ajustes
-          </Button>
-        </div>
-      </header>
+      <TitleBar
+        docName={docName}
+        onDocNameChange={setDocName}
+        onOpenHistory={() => setHistoryOpen(true)}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onToggleAi={() => setChatOpen((v) => !v)}
+        aiOpen={chatOpen}
+        onExport={handleExport}
+        canExport={canExport}
+        isExporting={isExporting}
+      />
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2">
-        <div className="min-h-0 border-b border-border md:border-b-0 md:border-r">
-          <PromptPanel
-            prompt={prompt}
-            onPromptChange={setPrompt}
-            attachments={attachments}
-            onFilesSelected={handleFilesSelected}
-            onRemoveAttachment={handleRemoveAttachment}
-            status={status}
-            onGenerate={handleGenerate}
-            hasReadyAttachment={hasReadyAttachment}
-          />
-        </div>
-        <div className="min-h-0">
-          <ResponseCanvas
-            editor={editor}
-            status={status}
-            responseText={responseText}
-            errorMessage={errorMessage}
-            chatOpen={chatOpen}
-            onToggleChat={() => setChatOpen((v) => !v)}
-            chatMessages={chatMessages}
+      {mode === "editing" && (
+        <EditorToolbar editor={editor} onAiOpen={() => setChatOpen(true)} onAiAction={handleRibbonAiAction} />
+      )}
+
+      <div className="flex min-h-0 flex-1">
+        <DocumentCanvas
+          editor={editor}
+          mode={mode}
+          responseText={responseText}
+          starter={{
+            prompt,
+            onPromptChange: setPrompt,
+            attachments,
+            onFilesSelected: handleFilesSelected,
+            onRemoveAttachment: handleRemoveAttachment,
+            onGenerate: handleGenerate,
+            onStartBlank: handleStartBlank,
+            isGenerating: status === "streaming",
+            canGenerate: prompt.trim().length > 0 || hasReadyAttachment,
+            errorMessage,
+          }}
+          onSelectFragment={handleSelectFragment}
+          onFragmentAction={handleFragmentAction}
+        />
+
+        <AiSidePanel expanded={chatOpen} onToggle={() => setChatOpen((v) => !v)} modelLabel={modelLabel}>
+          <GeminiPanel
+            messages={chatMessages}
             pendingFragment={pendingFragment}
-            onSelectFragment={handleSelectFragment}
             onClearPendingFragment={() => {
               setPendingFragment(null)
               setPendingRange(null)
             }}
-            onSendChatMessage={handleSendChatMessage}
+            onSend={handleSendChatMessage}
             onApplyEdit={handleApplyEdit}
-            isChatSending={isChatSending}
+            onInsert={handleInsert}
+            onReplaceAll={handleReplaceAll}
+            attachments={attachments}
+            onFilesSelected={handleFilesSelected}
+            onRemoveAttachment={handleRemoveAttachment}
+            isSending={isChatSending}
           />
-        </div>
+        </AiSidePanel>
       </div>
+
+      <StatusBar editor={editor} status={status} modelLabel={modelLabel} />
 
       <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />
       <HistorySidebar open={historyOpen} onOpenChange={setHistoryOpen} onLoad={handleLoadHistoryEntry} />

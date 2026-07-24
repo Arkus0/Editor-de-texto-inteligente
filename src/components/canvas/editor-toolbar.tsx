@@ -7,6 +7,7 @@ import {
   AlignJustify,
   AlignLeft,
   AlignRight,
+  ArrowRightToLine,
   Bold,
   Code,
   Heading1,
@@ -23,11 +24,13 @@ import {
   Pilcrow,
   Quote,
   Redo2,
+  Sparkles,
   Strikethrough,
   Table as TableIcon,
   Underline as UnderlineIcon,
   Undo2,
   Unlink,
+  WandSparkles,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -35,13 +38,25 @@ import { Toggle } from "@/components/ui/toggle"
 import { Separator } from "@/components/ui/separator"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
 interface EditorToolbarProps {
   editor: Editor | null
+  onAiOpen: () => void
+  onAiAction: (actionId: string) => void
 }
 
 const TEXT_COLORS = ["#0f172a", "#dc2626", "#d97706", "#16a34a", "#2563eb", "#7c3aed", "#db2777"]
 const HIGHLIGHT_COLORS = ["#fff3a3", "#bbf7d0", "#bfdbfe", "#fbcfe8", "#fed7aa"]
+
+function RibbonGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-1 px-2">
+      <div className="flex items-center gap-0.5">{children}</div>
+      <span className="text-[10px] leading-none text-muted-foreground">{label}</span>
+    </div>
+  )
+}
 
 function ToolbarButton({
   onClick,
@@ -228,7 +243,7 @@ function TableButton({ editor }: { editor: Editor }) {
   )
 }
 
-export function EditorToolbar({ editor }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onAiOpen, onAiAction }: EditorToolbarProps) {
   const [, forceRerender] = React.useReducer((c) => c + 1, 0)
 
   React.useEffect(() => {
@@ -244,147 +259,191 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
   if (!editor) return null
 
+  const hasSelection = !editor.state.selection.empty
+
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-3 py-1.5">
-      <ToolbarButton label="Deshacer" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
-        <Undo2 />
-      </ToolbarButton>
-      <ToolbarButton label="Rehacer" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
-        <Redo2 />
-      </ToolbarButton>
+    <div className="flex flex-wrap items-stretch gap-y-2 border-b border-border bg-muted/40 px-3 py-2 dark:bg-muted/20">
+      <RibbonGroup label="Deshacer">
+        <ToolbarButton label="Deshacer" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
+          <Undo2 />
+        </ToolbarButton>
+        <ToolbarButton label="Rehacer" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
+          <Redo2 />
+        </ToolbarButton>
+      </RibbonGroup>
 
-      <Separator orientation="vertical" className="mx-1 h-5" />
+      <Separator orientation="vertical" className="h-auto" />
 
-      <ToolbarButton label="Negrita" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
-        <Bold />
-      </ToolbarButton>
-      <ToolbarButton label="Cursiva" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
-        <Italic />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Subrayado"
-        active={editor.isActive("underline")}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-      >
-        <UnderlineIcon />
-      </ToolbarButton>
-      <ToolbarButton label="Tachado" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
-        <Strikethrough />
-      </ToolbarButton>
-      <ToolbarButton label="Código" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
-        <Code />
-      </ToolbarButton>
+      <RibbonGroup label="Fuente">
+        <ToolbarButton label="Negrita" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
+          <Bold />
+        </ToolbarButton>
+        <ToolbarButton label="Cursiva" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}>
+          <Italic />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Subrayado"
+          active={editor.isActive("underline")}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+        >
+          <UnderlineIcon />
+        </ToolbarButton>
+        <ToolbarButton label="Tachado" active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()}>
+          <Strikethrough />
+        </ToolbarButton>
+        <ToolbarButton label="Código" active={editor.isActive("code")} onClick={() => editor.chain().focus().toggleCode().run()}>
+          <Code />
+        </ToolbarButton>
+        <ColorPopover
+          icon={<Palette />}
+          label="Color de texto"
+          colors={TEXT_COLORS}
+          isActive={editor.isActive("textStyle")}
+          apply={(color) => editor.chain().focus().setColor(color).run()}
+          clear={() => editor.chain().focus().unsetColor().run()}
+        />
+        <ColorPopover
+          icon={<Highlighter />}
+          label="Resaltado"
+          colors={HIGHLIGHT_COLORS}
+          isActive={editor.isActive("highlight")}
+          apply={(color) => editor.chain().focus().toggleHighlight({ color }).run()}
+          clear={() => editor.chain().focus().unsetHighlight().run()}
+        />
+      </RibbonGroup>
 
-      <Separator orientation="vertical" className="mx-1 h-5" />
+      <Separator orientation="vertical" className="h-auto" />
 
-      <ToolbarButton
-        label="Párrafo"
-        active={editor.isActive("paragraph")}
-        onClick={() => editor.chain().focus().setParagraph().run()}
-      >
-        <Pilcrow />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Título 1"
-        active={editor.isActive("heading", { level: 1 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-      >
-        <Heading1 />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Título 2"
-        active={editor.isActive("heading", { level: 2 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        <Heading2 />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Título 3"
-        active={editor.isActive("heading", { level: 3 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-      >
-        <Heading3 />
-      </ToolbarButton>
+      <RibbonGroup label="Estilos">
+        <ToolbarButton
+          label="Párrafo"
+          active={editor.isActive("paragraph")}
+          onClick={() => editor.chain().focus().setParagraph().run()}
+        >
+          <Pilcrow />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Título 1"
+          active={editor.isActive("heading", { level: 1 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        >
+          <Heading1 />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Título 2"
+          active={editor.isActive("heading", { level: 2 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        >
+          <Heading2 />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Título 3"
+          active={editor.isActive("heading", { level: 3 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        >
+          <Heading3 />
+        </ToolbarButton>
+      </RibbonGroup>
 
-      <Separator orientation="vertical" className="mx-1 h-5" />
+      <Separator orientation="vertical" className="h-auto" />
 
-      <ToolbarButton
-        label="Lista con viñetas"
-        active={editor.isActive("bulletList")}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        <List />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Lista numerada"
-        active={editor.isActive("orderedList")}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        <ListOrdered />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Cita"
-        active={editor.isActive("blockquote")}
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-      >
-        <Quote />
-      </ToolbarButton>
-      <ToolbarButton label="Línea horizontal" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
-        <Minus />
-      </ToolbarButton>
+      <RibbonGroup label="Párrafo">
+        <ToolbarButton
+          label="Lista con viñetas"
+          active={editor.isActive("bulletList")}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          <List />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Lista numerada"
+          active={editor.isActive("orderedList")}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
+          <ListOrdered />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Cita"
+          active={editor.isActive("blockquote")}
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        >
+          <Quote />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Alinear a la izquierda"
+          active={editor.isActive({ textAlign: "left" })}
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        >
+          <AlignLeft />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Centrar"
+          active={editor.isActive({ textAlign: "center" })}
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        >
+          <AlignCenter />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Alinear a la derecha"
+          active={editor.isActive({ textAlign: "right" })}
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        >
+          <AlignRight />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Justificar"
+          active={editor.isActive({ textAlign: "justify" })}
+          onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+        >
+          <AlignJustify />
+        </ToolbarButton>
+      </RibbonGroup>
 
-      <Separator orientation="vertical" className="mx-1 h-5" />
+      <Separator orientation="vertical" className="h-auto" />
 
-      <ToolbarButton
-        label="Alinear a la izquierda"
-        active={editor.isActive({ textAlign: "left" })}
-        onClick={() => editor.chain().focus().setTextAlign("left").run()}
-      >
-        <AlignLeft />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Centrar"
-        active={editor.isActive({ textAlign: "center" })}
-        onClick={() => editor.chain().focus().setTextAlign("center").run()}
-      >
-        <AlignCenter />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Alinear a la derecha"
-        active={editor.isActive({ textAlign: "right" })}
-        onClick={() => editor.chain().focus().setTextAlign("right").run()}
-      >
-        <AlignRight />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Justificar"
-        active={editor.isActive({ textAlign: "justify" })}
-        onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-      >
-        <AlignJustify />
-      </ToolbarButton>
+      <RibbonGroup label="Insertar">
+        <LinkPopover editor={editor} />
+        <TableButton editor={editor} />
+        <ImageButton editor={editor} />
+        <ToolbarButton label="Línea horizontal" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+          <Minus />
+        </ToolbarButton>
+      </RibbonGroup>
 
-      <Separator orientation="vertical" className="mx-1 h-5" />
+      <Separator orientation="vertical" className="h-auto" />
 
-      <LinkPopover editor={editor} />
-      <ColorPopover
-        icon={<Palette />}
-        label="Color de texto"
-        colors={TEXT_COLORS}
-        isActive={editor.isActive("textStyle")}
-        apply={(color) => editor.chain().focus().setColor(color).run()}
-        clear={() => editor.chain().focus().unsetColor().run()}
-      />
-      <ColorPopover
-        icon={<Highlighter />}
-        label="Resaltado"
-        colors={HIGHLIGHT_COLORS}
-        isActive={editor.isActive("highlight")}
-        apply={(color) => editor.chain().focus().toggleHighlight({ color }).run()}
-        clear={() => editor.chain().focus().unsetHighlight().run()}
-      />
-      <TableButton editor={editor} />
-      <ImageButton editor={editor} />
+      <RibbonGroup label="Gemini IA">
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={onAiOpen}
+          title="Abrir el asistente Gemini"
+        >
+          <Sparkles className="h-4 w-4" />
+          Asistente
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className={cn("h-8 gap-1.5 text-primary", !hasSelection && "opacity-50")}
+          onClick={() => onAiAction("rewrite")}
+          disabled={!hasSelection}
+          title="Reescribir el texto seleccionado"
+        >
+          <WandSparkles className="h-4 w-4" />
+          Reescribir
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 gap-1.5 text-primary"
+          onClick={() => onAiAction("continue")}
+          title="Continuar escribiendo con Gemini"
+        >
+          <ArrowRightToLine className="h-4 w-4" />
+          Continuar
+        </Button>
+      </RibbonGroup>
     </div>
   )
 }
