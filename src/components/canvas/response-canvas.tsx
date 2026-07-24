@@ -3,19 +3,29 @@
 import * as React from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { Check, ChevronDown, Copy, Download, FileText } from "lucide-react"
+import { Check, ChevronDown, Copy, Download, FileText, MessageSquareText, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { ResponseChat } from "@/components/canvas/response-chat"
 import { cn } from "@/lib/utils"
-import type { GenerationStatus } from "@/components/app-shell"
+import type { ChatMessage, GenerationStatus } from "@/components/app-shell"
 
 interface ResponseCanvasProps {
   status: GenerationStatus
   responseText: string
   errorMessage: string | null
+  chatOpen: boolean
+  onToggleChat: () => void
+  chatMessages: ChatMessage[]
+  pendingFragment: string | null
+  onSelectFragment: (fragment: string) => void
+  onClearPendingFragment: () => void
+  onSendChatMessage: (message: string, quotedFragment?: string) => void
+  onApplyEdit: (quotedFragment: string, replacement: string) => void
+  isChatSending: boolean
 }
 
 const STATUS_LABEL: Record<GenerationStatus, string> = {
@@ -35,8 +45,30 @@ function downloadTextFile(filename: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
-export function ResponseCanvas({ status, responseText, errorMessage }: ResponseCanvasProps) {
+interface FloatingSelection {
+  text: string
+  top: number
+  left: number
+}
+
+export function ResponseCanvas({
+  status,
+  responseText,
+  errorMessage,
+  chatOpen,
+  onToggleChat,
+  chatMessages,
+  pendingFragment,
+  onSelectFragment,
+  onClearPendingFragment,
+  onSendChatMessage,
+  onApplyEdit,
+  isChatSending,
+}: ResponseCanvasProps) {
   const [copied, setCopied] = React.useState(false)
+  const [floatingSelection, setFloatingSelection] = React.useState<FloatingSelection | null>(null)
+  const contentRef = React.useRef<HTMLDivElement>(null)
+  const floatingButtonRef = React.useRef<HTMLButtonElement>(null)
 
   const handleCopy = async () => {
     if (!responseText) return
@@ -49,6 +81,36 @@ export function ResponseCanvas({ status, responseText, errorMessage }: ResponseC
   const handleExport = (extension: "md" | "txt") => {
     if (!responseText) return
     downloadTextFile(`respuesta-modelica.${extension}`, responseText)
+  }
+
+  const handleMouseUp = () => {
+    if (status !== "done") return
+    const selection = window.getSelection()
+    if (!selection || selection.isCollapsed || !contentRef.current) {
+      return
+    }
+    const text = selection.toString().trim()
+    if (!text || !contentRef.current.contains(selection.anchorNode)) {
+      return
+    }
+    const rect = selection.getRangeAt(0).getBoundingClientRect()
+    setFloatingSelection({ text, top: rect.top, left: rect.left + rect.width / 2 })
+  }
+
+  React.useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (floatingButtonRef.current?.contains(event.target as Node)) return
+      setFloatingSelection(null)
+    }
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => document.removeEventListener("mousedown", handlePointerDown)
+  }, [])
+
+  const handleAskAboutSelection = () => {
+    if (!floatingSelection) return
+    onSelectFragment(floatingSelection.text)
+    window.getSelection()?.removeAllRanges()
+    setFloatingSelection(null)
   }
 
   const hasContent = responseText.trim().length > 0
@@ -70,6 +132,10 @@ export function ResponseCanvas({ status, responseText, errorMessage }: ResponseC
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant={chatOpen ? "secondary" : "outline"} size="sm" onClick={onToggleChat} disabled={!hasContent}>
+            <MessageSquareText />
+            Chat
+          </Button>
           <Button variant="outline" size="sm" onClick={handleCopy} disabled={!hasContent}>
             {copied ? <Check /> : <Copy />}
             Copiar
@@ -101,8 +167,8 @@ export function ResponseCanvas({ status, responseText, errorMessage }: ResponseC
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="mx-auto max-w-[70ch] px-8 py-12">
+      <ScrollArea className="min-h-0 flex-1">
+        <div ref={contentRef} onMouseUp={handleMouseUp} className="mx-auto max-w-[70ch] px-8 py-12">
           {status === "error" ? (
             <p className="text-sm text-destructive">{errorMessage}</p>
           ) : hasContent ? (
@@ -120,6 +186,34 @@ export function ResponseCanvas({ status, responseText, errorMessage }: ResponseC
           )}
         </div>
       </ScrollArea>
+
+      {floatingSelection && (
+        <button
+          ref={floatingButtonRef}
+          onClick={handleAskAboutSelection}
+          style={{
+            position: "fixed",
+            top: Math.max(floatingSelection.top - 42, 8),
+            left: floatingSelection.left,
+            transform: "translateX(-50%)",
+          }}
+          className="z-40 flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-lg transition-transform hover:scale-105"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Preguntar a Gemini
+        </button>
+      )}
+
+      {chatOpen && (
+        <ResponseChat
+          messages={chatMessages}
+          pendingFragment={pendingFragment}
+          onClearPendingFragment={onClearPendingFragment}
+          onSend={onSendChatMessage}
+          onApplyEdit={onApplyEdit}
+          isSending={isChatSending}
+        />
+      )}
     </div>
   )
 }

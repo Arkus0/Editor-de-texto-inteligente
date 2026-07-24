@@ -61,6 +61,20 @@ export interface GenerateModelAnswerParams {
   contextText?: string;
 }
 
+const NO_PROMPT_INSTRUCTION =
+  "No se ha escrito ningún enunciado directamente. El enunciado, la pregunta o la consigna del trabajo se encuentra dentro del material adjunto a continuación: localízalo tú mismo y redacta la respuesta modélica correspondiente.";
+
+function buildContents(prompt: string, contextText?: string): string {
+  const trimmedPrompt = prompt.trim();
+  const trimmedContext = contextText?.trim();
+
+  const instruction = trimmedPrompt || NO_PROMPT_INSTRUCTION;
+
+  if (!trimmedContext) return instruction;
+
+  return `${instruction}\n\n--- MATERIAL ADJUNTO (puede contener el enunciado y/o lecturas de apoyo) ---\n${trimmedContext}`;
+}
+
 export async function generateModelAnswerStream(
   { apiKey, model, systemPrompt, temperature, topP, unrestrictedMode, prompt, contextText }: GenerateModelAnswerParams,
   onChunk: (accumulatedText: string) => void,
@@ -68,15 +82,88 @@ export async function generateModelAnswerStream(
 ): Promise<string> {
   const ai = new GoogleGenAI({ apiKey });
 
-  const contents = contextText?.trim()
-    ? `${prompt}\n\n--- LECTURAS Y CONTEXTO ADJUNTO ---\n${contextText}`
-    : prompt;
+  const contents = buildContents(prompt, contextText);
 
   const stream = await ai.models.generateContentStream({
     model,
     contents,
     config: {
       systemInstruction: systemPrompt,
+      temperature,
+      topP,
+      safetySettings: buildSafetySettings(unrestrictedMode),
+    },
+  });
+
+  let accumulated = "";
+  for await (const chunk of stream) {
+    if (signal?.aborted) break;
+    const chunkText = chunk.text ?? "";
+    accumulated += chunkText;
+    onChunk(accumulated);
+  }
+  return accumulated;
+}
+
+export interface ChatTurn {
+  role: "user" | "model";
+  content: string;
+}
+
+export interface ChatAboutDocumentParams {
+  apiKey: string;
+  model: string;
+  temperature: number;
+  topP: number;
+  unrestrictedMode: boolean;
+  documentText: string;
+  history: ChatTurn[];
+  userMessage: string;
+  quotedFragment?: string;
+}
+
+const CHAT_SYSTEM_INSTRUCTION = (documentText: string) => `Eres el mismo ensayista académico que redactó el siguiente texto y ahora conversas con el autor para revisarlo y mejorarlo.
+
+TEXTO ACTUAL:
+"""
+${documentText}
+"""
+
+Cuando el usuario cite un fragmento y pida reescribirlo, ampliarlo, acortarlo, cambiar su tono o corregirlo, responde ÚNICAMENTE con el texto de reemplazo del fragmento, en prosa académica continua, sin comillas, sin comentarios ni explicaciones adicionales, listo para sustituir el fragmento original tal cual.
+
+Cuando el usuario pida una opinión, una explicación o haga una pregunta general sobre el texto (sin pedir explícitamente una reescritura), responde de forma conversacional, breve y precisa, sin reescribir nada.`;
+
+export async function chatAboutDocumentStream(
+  {
+    apiKey,
+    model,
+    temperature,
+    topP,
+    unrestrictedMode,
+    documentText,
+    history,
+    userMessage,
+    quotedFragment,
+  }: ChatAboutDocumentParams,
+  onChunk: (accumulatedText: string) => void,
+  signal?: AbortSignal
+): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey });
+
+  const wrappedUserMessage = quotedFragment
+    ? `Fragmento seleccionado:\n"""\n${quotedFragment}\n"""\n\n${userMessage}`
+    : userMessage;
+
+  const contents = [
+    ...history.map((turn) => ({ role: turn.role, parts: [{ text: turn.content }] })),
+    { role: "user" as const, parts: [{ text: wrappedUserMessage }] },
+  ];
+
+  const stream = await ai.models.generateContentStream({
+    model,
+    contents,
+    config: {
+      systemInstruction: CHAT_SYSTEM_INSTRUCTION(documentText),
       temperature,
       topP,
       safetySettings: buildSafetySettings(unrestrictedMode),

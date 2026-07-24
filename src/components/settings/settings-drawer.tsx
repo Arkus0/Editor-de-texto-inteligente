@@ -1,6 +1,7 @@
 "use client"
 
-import { RotateCcw } from "lucide-react"
+import * as React from "react"
+import { PinOff, RotateCcw, Save, Trash2 } from "lucide-react"
 
 import {
   Sheet,
@@ -20,6 +21,7 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AVAILABLE_MODELS } from "@/lib/gemini"
 import { useSettingsStore } from "@/store/useSettingsStore"
+import { useSystemPromptStore } from "@/store/useSystemPromptStore"
 
 interface SettingsDrawerProps {
   open: boolean
@@ -42,6 +44,18 @@ export function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
     setSystemPrompt,
     resetSystemPrompt,
   } = useSettingsStore()
+
+  const { prompts, save: saveSystemPrompt, promote, remove: removeSystemPrompt } = useSystemPromptStore()
+  const [newPromptName, setNewPromptName] = React.useState("")
+
+  const pinnedPrompts = prompts.filter((p) => p.pinned)
+  const recentPrompts = prompts.filter((p) => !p.pinned)
+
+  const handleSaveCurrent = () => {
+    if (!newPromptName.trim()) return
+    saveSystemPrompt(newPromptName, systemPrompt)
+    setNewPromptName("")
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -154,6 +168,94 @@ export function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 className="min-h-[280px] font-mono text-xs leading-relaxed"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Guardar prompt actual</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newPromptName}
+                  onChange={(e) => setNewPromptName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveCurrent()}
+                  placeholder="Nombre, p. ej. «Tono ensayístico duro»"
+                  className="h-9 text-sm"
+                />
+                <Button size="sm" onClick={handleSaveCurrent} disabled={!newPromptName.trim()}>
+                  <Save className="h-3.5 w-3.5" />
+                  Guardar
+                </Button>
+              </div>
+
+              {(pinnedPrompts.length > 0 || recentPrompts.length > 0) && (
+                <div className="space-y-1.5 pt-1">
+                  {pinnedPrompts.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSystemPrompt(p.prompt)}
+                        className="flex-1 truncate text-left font-medium hover:underline"
+                        title={p.prompt}
+                      >
+                        {p.name}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSystemPrompt(p.id)}
+                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                        aria-label={`Eliminar «${p.name}»`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {recentPrompts.length > 0 && (
+                    <>
+                      <p className="pt-2 text-xs font-medium text-muted-foreground">
+                        Usados recientemente
+                      </p>
+                      {recentPrompts.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center gap-2 rounded-md border border-dashed border-border px-2.5 py-1.5 text-xs"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSystemPrompt(p.prompt)}
+                            className="flex-1 truncate text-left text-muted-foreground hover:underline"
+                            title={p.prompt}
+                          >
+                            {p.prompt.slice(0, 60)}
+                            {p.prompt.length > 60 ? "…" : ""}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const name = window.prompt("Nombre para este system prompt:")
+                              if (name?.trim()) promote(p.id, name)
+                            }}
+                            className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                            aria-label="Guardar en favoritos"
+                          >
+                            <PinOff className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeSystemPrompt(p.id)}
+                            className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                            aria-label="Eliminar del historial"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </ScrollArea>
