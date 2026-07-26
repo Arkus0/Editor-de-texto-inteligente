@@ -258,6 +258,23 @@ a {
   gap: 6px;
 }
 
+.format-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.format-strip span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 10px;
+}
+
 /* ---------- App mockup ---------- */
 
 .mockup {
@@ -473,6 +490,27 @@ section {
 .mode-card.pro .tag {
   background: var(--primary-soft);
   color: var(--primary-dark);
+}
+
+.mode-card.ia-write .tag {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.mode-card.ia-research .tag {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.mode-card.ia-design .tag {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+@media (min-width: 901px) {
+  .ia-modes {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .mode-card ol,
