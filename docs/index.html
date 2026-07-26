@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Juord — el editor de documentos con IA que ya sabes usar</title>
+<meta name="description" content="Juord es un editor de documentos profesional con maquetación tipo Word, compatibilidad DOCX/PDF/ODT y un asistente de IA (Gemini u OpenRouter) que entiende y modifica tu documento. Descarga el instalador o la versión portable para Windows." />
+<link rel="icon" href="assets/favicon.ico" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<nav class="site-nav" id="siteNav">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M9 12.5h6M9 15.8h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M16.3 8.2 17.4 6l1.1 2.2 2.2 1.1-2.2 1.1L17.4 12.6l-1.1-2.2-2.2-1.1 2.2-1.1Z" fill="#fff"/>
+        </svg>
+      </span>
+      Juord
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="nav-links">
+      <a href="#caracteristicas">Características</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="guia.html">Guía de uso</a>
+      <a href="#descargas">Descargas</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-primary btn-sm" href="#descargas">Descargar</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Versión 0.8.3 · Windows · Gratis</span>
+      <h1>Juord: el editor de documentos con IA que ya sabes usar</h1>
+      <p class="lead">
+        Maquetación profesional al estilo Word, compatibilidad real con DOCX, PDF y ODT,
+        y un asistente de IA que entiende tu documento y lo edita contigo: redacta,
+        reescribe, investiga, revisa citas y aplica cambios con tu confirmación.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#descargas">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0 5-5m-5 5-5-5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Descargar para Windows
+        </a>
+        <a class="btn btn-ghost" href="guia.html">Ver la guía de uso</a>
+      </div>
+      <div class="hero-meta">
+        <span>✓ Funciona sin conexión para escribir y maquetar</span>
+        <span>✓ La IA es opcional, con tu propia API key</span>
+        <span>✓ Zotero y citas académicas</span>
+      </div>
+    </div>
+
+    <div class="mockup" aria-hidden="true">
+      <div class="mockup-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="title">Informe trimestral de resultados — Juord</span>
+      </div>
+      <div class="mockup-ribbon">
+        <span>Archivo</span><span class="active">Inicio</span><span>Insertar</span><span>Diseño</span>
+        <span>Disposición</span><span>Referencias</span><span>Correspondencia</span><span>Revisar</span><span>Vista</span><span>IA</span>
+      </div>
+      <div class="mockup-toolbar">
+        <i></i><i></i><i></i><i style="width:44px"></i><i></i><i></i><i></i>
+      </div>
+      <div class="mockup-body">
+        <div class="mockup-page">
+          <div class="line h w60"></div>
+          <div class="line w40"></div>
+          <div class="line"></div>
+          <div class="line w80"></div>
+          <div class="line w60"></div>
+        </div>
+        <div class="mockup-ai">
+          <div class="ai-head">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z" fill="currentColor"/></svg>
+            Asistente IA
+          </div>
+          <span class="chip on">Escribir</span>
+          <span class="chip">Investigar</span>
+          <span class="chip">Diseñar</span>
+          <span class="chip" style="margin-top:10px">Continuar escribiendo</span>
+          <span class="chip">Resumir</span>
+          <span class="chip">Pulir redacción</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="como-funciona">
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Cómo funciona</div>
+      <h2>Dos formas de trabajar, el mismo documento</h2>
+      <p>Empieza sin configurar nada o afina cada parámetro del modelo de IA. Puedes cambiar de modo en cualquier momento sin perder el enunciado ni los archivos adjuntos.</p>
+    </div>
+    <div class="modes">
+      <div class="mode-card fast">
+        <span class="tag">Modo Rápido</span>
+        <h3>Para no configurar nada</h3>
+        <p>Pensado para quien quiere un borrador ya.</p>
+        <ol>
+          <li>Adjunta tus materiales o describe el documento.</li>
+          <li>Pulsa <strong>Crear documento con IA</strong>.</li>
+          <li>Edita el resultado o pide cambios por chat.</li>
+        </ol>
+      </div>
+      <div class="mode-card pro">
+        <span class="tag">Modo Profesional</span>
+        <h3>Control total del resultado</h3>
+        <p>El mismo enunciado y los mismos archivos, con más control:</p>
+        <ul>
+          <li>Elige Gemini 3.1 Pro/Flash/Flash-Lite u OpenRouter gratis.</li>
+          <li>Ajusta razonamiento, temperatura y longitud.</li>
+          <li>Instrucciones maestras, fuentes y perfiles reutilizables.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="caracteristicas">
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Características</div>
+      <h2>Todo lo que esperas de un editor profesional</h2>
+      <p>Con la familiaridad de Word y funciones pensadas para trabajos académicos, informes y documentos largos.</p>
+    </div>
+    <div class="features">
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l4 4v14H7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 12h6M10 15.5h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h3>Compatible con Word, PDF y ODT</h3>
+        <p>Abre, edita y exporta DOCX, PDF y OpenDocument conservando estilos, notas, campos, tablas e imágenes.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z" fill="currentColor"/></svg></div>
+        <h3>Asistente de IA contextual</h3>
+        <p>Redacta, reescribe, resume, traduce e investiga con fuentes. Ve la vista previa antes de aplicar cualquier cambio.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 9h16M9 9v11" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <h3>Cinta personalizable</h3>
+        <p>Pestañas, orden y grupos configurables con la organización familiar de Word, KeyTips incluidas.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="19" cy="18" r="2" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <h3>Zotero y citas académicas</h3>
+        <p>Sincroniza Zotero Desktop o Zotero.org, más de 10.000 estilos CSL y fusión de duplicados campo a campo.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" stroke="currentColor" stroke-width="1.7"/><path d="M9 12.5l2 2 4-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Revisión y control de cambios</h3>
+        <p>Comentarios, respuestas, seguimiento de cambios y comparación estructural entre versiones o formatos.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM13 13h6v6h-6z" stroke="currentColor" stroke-width="1.6"/></svg></div>
+        <h3>Tablas y fórmulas</h3>
+        <p>Estilos de tabla, ordenación por columna y fórmulas SUM, AVERAGE, COUNT, MIN y MAX exportables a Word y ODT.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19v-3.5L15.5 4 19 7.5 7.5 19H4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+        <h3>Ecuaciones y símbolos</h3>
+        <p>LaTeX renderizado con KaTeX, exportado como OMML editable en Word, y galería buscable de símbolos.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h3>Correspondencia en lote</h3>
+        <p>Combina un CSV/TSV local con tu plantilla y genera los documentos por intervalos en una pestaña nueva.</p>
+      </div>
+
+      <div class="feature">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg></div>
+        <h3>Autoguardado y recuperación</h3>
+        <p>Historial de versiones, detección de cambios externos y copia de seguridad antes de sobrescribir.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="guia-rapida">
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Empezar</div>
+      <h2>Configura la IA en tres pasos</h2>
+      <p>No hace falta editar archivos ni usar la terminal. Todo se hace desde Ajustes.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Elige proveedor</h3>
+        <p>Abre <strong>Ajustes</strong> y elige Gemini o OpenRouter gratis. La app lo pedirá automáticamente si aún no hay clave.</p>
+      </div>
+      <div class="step">
+        <h3>Pega tu API key</h3>
+        <p>Crea una clave gratuita en Google AI Studio u OpenRouter y pégala. Se guarda solo en tu perfil local, nunca en los documentos.</p>
+      </div>
+      <div class="step">
+        <h3>Guarda y comprueba</h3>
+        <p>La aplicación prueba la conexión antes de activarla. Con OpenRouter se evita cualquier modelo de pago automáticamente.</p>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:34px">
+      <a class="btn btn-ghost" href="guia.html">Leer la guía completa →</a>
+    </div>
+  </div>
+</section>
+
+<section id="descargas">
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Descargas</div>
+      <h2>Descarga Juord</h2>
+      <p>Disponible para Windows 10/11 de 64 bits. Elige instalador si quieres accesos directos y actualizaciones sencillas, o portable si prefieres ejecutarlo sin instalar.</p>
+    </div>
+
+    <div class="downloads">
+      <div class="download-card recommended">
+        <span class="badge">Recomendado</span>
+        <div class="icon-row">
+          <span class="icn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0 5-5m-5 5-5-5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div>
+            <h3>Instalador de Juord (Setup.exe)</h3>
+            <div class="filesize">Editor-Inteligente-IA-Setup.exe · ~190 MB</div>
+          </div>
+        </div>
+        <ul>
+          <li>Crea accesos directos en el menú Inicio.</li>
+          <li>Se instala por usuario, sin permisos de administrador.</li>
+          <li>Preparado para futuras actualizaciones automáticas.</li>
+        </ul>
+        <a class="btn btn-primary btn-block" href="https://github.com/Arkus0/Editor-de-texto-inteligente/releases/download/v0.8.3/Editor-Inteligente-IA-Setup.exe">Descargar instalador</a>
+      </div>
+
+      <div class="download-card">
+        <div class="icon-row">
+          <span class="icn"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+          <div>
+            <h3>Juord portable</h3>
+            <div class="filesize">Editor-Inteligente-IA-Portable-0.8.3.exe · ~123 MB</div>
+          </div>
+        </div>
+        <ul>
+          <li>Un único .exe, no requiere instalación.</li>
+          <li>Ideal para llevarlo en un USB o probarlo sin instalar.</li>
+          <li>Guarda su configuración junto al ejecutable.</li>
+        </ul>
+        <a class="btn btn-ghost btn-block" href="https://github.com/Arkus0/Editor-de-texto-inteligente/releases/download/v0.8.3/Editor-Inteligente-IA-Portable-0.8.3.exe">Descargar portable</a>
+      </div>
+    </div>
+
+    <p class="download-note">
+      <strong>Nota sobre SmartScreen:</strong> la aplicación no está firmada digitalmente todavía, así que Windows
+      puede mostrar un aviso de «Editor desconocido» la primera vez. Pulsa <strong>Más información → Ejecutar de todas formas</strong>
+      para continuar. Puedes ver todas las versiones publicadas en la
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente/releases">página de releases de GitHub</a>.
+      Los nombres de los archivos todavía incluyen «Editor Inteligente IA», el nombre técnico anterior del
+      proyecto; el producto ya se llama <strong>Juord</strong>.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head center">
+      <div class="kicker">Preguntas frecuentes</div>
+      <h2>Antes de empezar</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>¿Es gratis?</summary>
+        <p>Sí. La aplicación es gratuita. La IA usa tu propia API key de Gemini (con cuota gratuita en Google AI Studio) o el enrutador gratuito de OpenRouter, así que no pagas nada a través de la app.</p>
+      </details>
+      <details>
+        <summary>¿Necesito una API key para usarlo?</summary>
+        <p>Solo si quieres usar el asistente de IA. El editor, la maquetación, la exportación DOCX/PDF/ODT y Zotero funcionan sin ninguna clave ni conexión a internet.</p>
+      </details>
+      <details>
+        <summary>¿Qué diferencia hay entre el instalador y el portable?</summary>
+        <p>El instalador crea accesos directos y facilita futuras actualizaciones. El portable es un único .exe que puedes ejecutar desde cualquier carpeta o memoria USB, sin instalación.</p>
+      </details>
+      <details>
+        <summary>¿Funciona en Mac o Linux?</summary>
+        <p>Por ahora la distribución empaquetada solo está disponible para Windows. El código es abierto, así que puedes revisarlo en el repositorio de GitHub.</p>
+      </details>
+      <details>
+        <summary>¿Mis documentos o mi clave de API se envían a algún servidor propio?</summary>
+        <p>No. Las claves se guardan en tu perfil local y los documentos se editan en tu equipo. Las peticiones de IA van directamente al proveedor que elijas (Google o OpenRouter).</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>Prueba Juord hoy mismo</h2>
+      <p>Instálalo en un minuto y empieza a escribir con ayuda de la IA, a tu ritmo.</p>
+      <div class="hero-ctas" style="justify-content:center">
+        <a class="btn btn-primary" href="#descargas">Descargar para Windows</a>
+        <a class="btn btn-ghost" href="guia.html">Ver la guía de uso</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="year"></span> Juord</span>
+    <div class="foot-links">
+      <a href="guia.html">Guía de uso</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente">Repositorio</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente/releases">Releases</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente/issues">Reportar un problema</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  var toggle = document.getElementById('navToggle');
+  var nav = document.getElementById('siteNav');
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var open = nav.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    nav.querySelectorAll('.nav-links a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

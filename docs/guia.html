@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Guía de uso — Juord</title>
+<meta name="description" content="Guía completa de Juord: instalación, Modo Rápido y Profesional, configuración de la IA, Zotero, revisión, exportación y preguntas frecuentes." />
+<link rel="icon" href="assets/favicon.ico" />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<nav class="site-nav" id="siteNav">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <span class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M9 12.5h6M9 15.8h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M16.3 8.2 17.4 6l1.1 2.2 2.2 1.1-2.2 1.1L17.4 12.6l-1.1-2.2-2.2-1.1 2.2-1.1Z" fill="#fff"/>
+        </svg>
+      </span>
+      Juord
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="nav-links">
+      <a href="index.html#caracteristicas">Características</a>
+      <a href="index.html#como-funciona">Cómo funciona</a>
+      <a href="guia.html">Guía de uso</a>
+      <a href="index.html#descargas">Descargas</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente" target="_blank" rel="noopener">GitHub</a>
+      <a class="btn btn-primary btn-sm" href="index.html#descargas">Descargar</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="wrap">
+    <span class="eyebrow">Guía de uso</span>
+    <h1>Todo lo necesario para empezar a usar Juord</h1>
+    <p>Desde la instalación hasta la configuración de la IA, Zotero y la exportación de tus documentos. Si es la primera vez que lo usas, sigue las secciones en orden.</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap guide-layout">
+    <aside class="guide-toc">
+      <a href="#instalacion">Instalación en Windows</a>
+      <a href="#modo-rapido">Modo Rápido</a>
+      <a href="#modo-profesional">Modo Profesional</a>
+      <a href="#configurar-ia">Configurar la IA</a>
+      <a href="#zotero">Conectar Zotero</a>
+      <a href="#edicion">Edición y revisión</a>
+      <a href="#exportar">Exportar e importar</a>
+      <a href="#limites">Límites conocidos</a>
+      <a href="#faq">Preguntas frecuentes</a>
+    </aside>
+
+    <div class="guide-content">
+
+      <h2 id="instalacion">Instalación en Windows</h2>
+      <p>
+        Descarga el <a href="index.html#descargas">instalador o la versión portable</a> desde la sección de
+        descargas. Ambas pesan lo mismo en funciones: la diferencia es solo cómo se ejecutan. Los nombres de los
+        archivos todavía incluyen «Editor Inteligente IA», el nombre técnico anterior del proyecto; el producto ya
+        se llama <strong>Juord</strong>.
+      </p>
+      <h3>Con el instalador</h3>
+      <p>
+        Ejecuta <code>Editor-Inteligente-IA-Setup.exe</code>. Es un instalador Squirrel por usuario: muestra
+        brevemente su ventana de instalación, crea accesos directos y guarda la aplicación en:
+      </p>
+      <pre><code>%LOCALAPPDATA%\EditorInteligenteIA\app-&lt;versión&gt;\EditorInteligenteIA.exe</code></pre>
+      <p>No es necesario conservar abierto el instalador para utilizar el programa.</p>
+      <h3>Con la versión portable</h3>
+      <p>
+        Descarga <code>Editor-Inteligente-IA-Portable-0.8.3.exe</code> y ejecútalo directamente, sin instalación.
+        Puedes moverlo a un USB o a cualquier carpeta; la configuración se guarda junto al ejecutable.
+      </p>
+      <div class="callout">
+        <p>
+          Como la aplicación aún no está firmada digitalmente, Windows SmartScreen puede mostrar un aviso de
+          «Editor desconocido» la primera vez. Pulsa <strong>Más información → Ejecutar de todas formas</strong>.
+        </p>
+      </div>
+
+      <h2 id="modo-rapido">Modo Rápido</h2>
+      <p>Pensado para quien no quiere configurar parámetros y quiere un borrador ya:</p>
+      <ol>
+        <li>Adjunta los materiales o describe el documento que necesitas.</li>
+        <li>Pulsa <strong>Crear documento con IA</strong>.</li>
+        <li>Edita el resultado directamente en el documento o conversa con el asistente para cambiar fragmentos.</li>
+      </ol>
+      <p>Este modo usa el modelo elegido en Ajustes (Gemini o el enrutador gratuito de OpenRouter) y mantiene la longitud automática según los materiales y el conocimiento del modelo.</p>
+
+      <h2 id="modo-profesional">Modo Profesional</h2>
+      <p>Conserva el mismo enunciado y los mismos archivos que el Modo Rápido, pero permite controlar:</p>
+      <ul>
+        <li>Gemini 3.1 Pro/Flash/Flash-Lite, <code>openrouter/free</code> o un modelo <code>:free</code> específico.</li>
+        <li>Nivel de razonamiento, temperatura y Top-P cuando el modelo los admite.</li>
+        <li>Longitud, una o dos pasadas, política de fuentes y filtros del modelo.</li>
+        <li>Instrucciones maestras, función de cada adjunto y análisis editable de los requisitos.</li>
+        <li>Perfiles reutilizables para informes profesionales, documentos estructurados y trabajos basados únicamente en los materiales.</li>
+      </ul>
+      <p>
+        La aplicación analiza automáticamente las instrucciones con Flash-Lite, detecta el tipo de documento, los
+        apartados y los requisitos, y usa esa lectura estructurada al redactar. La búsqueda web solo se activa
+        cuando se solicita explícitamente.
+      </p>
+
+      <h2 id="configurar-ia">Configurar la IA</h2>
+      <p>No hay que editar archivos ni usar la terminal:</p>
+      <ol>
+        <li>Abre <strong>Ajustes</strong>. Si todavía no hay clave, la aplicación lo abre automáticamente.</li>
+        <li>Elige <strong>Gemini</strong> o <strong>OpenRouter gratis</strong>.</li>
+        <li>Crea una API Key en Google AI Studio u OpenRouter y pégala.</li>
+        <li>Pulsa <strong>Guardar y comprobar</strong>.</li>
+      </ol>
+      <p>
+        Con OpenRouter, la opción predeterminada es <code>openrouter/free</code>: la app consulta el catálogo y
+        elige un modelo instructivo gratuito, popular y compatible, evitando clasificadores de seguridad y modelos
+        que no sirven para conversar o editar documentos. También se admite un modelo gratuito específico terminado
+        en <code>:free</code>. Cualquier identificador de pago se sustituye automáticamente por
+        <code>openrouter/free</code> para evitar cargos accidentales.
+      </p>
+      <p>
+        La aplicación prueba la conexión antes de activarla. Las claves se guardan en el perfil local de la
+        aplicación y nunca dentro de los documentos. Los modelos gratuitos tienen límites diarios y su
+        disponibilidad puede variar según el proveedor.
+      </p>
+
+      <h2 id="zotero">Conectar Zotero</h2>
+      <p>Abre <strong>Referencias → Fuentes y Zotero</strong>:</p>
+      <ol>
+        <li>
+          Para trabajar en local, abre Zotero Desktop y pulsa <strong>Detectar Zotero Desktop</strong>. Si Zotero
+          lo solicita, activa en <strong>Ajustes → Avanzado</strong> la opción que permite la comunicación con
+          otras aplicaciones.
+        </li>
+        <li>
+          Para Zotero.org, pulsa <strong>Crear API Key en Zotero</strong>, pega la clave y pulsa
+          <strong>Guardar y conectar</strong>.
+        </li>
+        <li>Elige biblioteca y colección, busca, selecciona e importa.</li>
+        <li>Usa <strong>Sincronizar cambios desde la última versión</strong> para actualizar lo ya importado.</li>
+      </ol>
+      <p>
+        La lectura local no modifica Zotero Desktop. La fusión remota solo se ejecuta tras una confirmación
+        explícita y necesita permiso de escritura en la API Key.
+      </p>
+
+      <h2 id="edicion">Edición y revisión después del borrador</h2>
+      <ul>
+        <li>Chat contextual sobre el documento y los materiales adjuntos.</li>
+        <li>Previsualización antes de aplicar una reescritura, con edición directa opcional.</li>
+        <li>Acciones específicas para reforzar argumentos, aclarar ideas, verificar afirmaciones y comprobar el cumplimiento de requisitos.</li>
+        <li>Comentarios, respuestas y control de cambios como en Word.</li>
+        <li>Comparación estructural entre versiones, DOCX, PDF, HTML, Markdown o texto, con adopción opcional de la versión comparada.</li>
+      </ul>
+
+      <h2 id="exportar">Exportar e importar</h2>
+      <p>
+        Juord lee y escribe DOCX, PDF y ODT conservando estilos, notas al pie y finales, campos
+        nativos (tablas de contenido, referencias cruzadas, rótulos), ecuaciones como OMML editable, tablas con
+        fórmulas y objetos flotantes como imágenes y cuadros de texto.
+      </p>
+      <p>El instalador y el portable incluyen todo lo necesario: no hace falta Word ni LibreOffice instalados para exportar.</p>
+
+      <h2 id="limites">Límites conocidos</h2>
+      <ul>
+        <li>Las citas exportadas son texto humano legible, no campos activos del complemento oficial de Zotero para Word.</li>
+        <li>La comparación permite revisar el cambio unificado y adoptar la versión completa; todavía no combina selectivamente cada revisión.</li>
+        <li>El asistente local de estilo aplica reglas prácticas de español; no sustituye un motor lingüístico completo.</li>
+      </ul>
+
+      <h2 id="faq">Preguntas frecuentes</h2>
+      <div class="faq" style="max-width:none">
+        <details>
+          <summary>¿Puedo usarlo sin API key?</summary>
+          <p>Sí. El editor, la maquetación y la exportación DOCX/PDF/ODT funcionan sin conexión. Solo necesitas una API key para el asistente de IA.</p>
+        </details>
+        <details>
+          <summary>¿Dónde se guardan mis documentos?</summary>
+          <p>En tu equipo, donde tú decidas guardarlos. La aplicación no sube tus documentos a ningún servidor propio.</p>
+        </details>
+        <details>
+          <summary>¿Qué pasa si el modelo gratuito de OpenRouter no está disponible?</summary>
+          <p>Puedes elegir otro modelo <code>:free</code> del catálogo desde Ajustes, o cambiar a Gemini con tu propia API key.</p>
+        </details>
+        <details>
+          <summary>¿Cómo reporto un error o pido una función nueva?</summary>
+          <p>Abre un issue en el <a href="https://github.com/Arkus0/Editor-de-texto-inteligente/issues">repositorio de GitHub</a>.</p>
+        </details>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="year"></span> Juord</span>
+    <div class="foot-links">
+      <a href="index.html">Inicio</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente">Repositorio</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente/releases">Releases</a>
+      <a href="https://github.com/Arkus0/Editor-de-texto-inteligente/issues">Reportar un problema</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  var toggle = document.getElementById('navToggle');
+  var nav = document.getElementById('siteNav');
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var open = nav.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    nav.querySelectorAll('.nav-links a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
