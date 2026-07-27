@@ -1,18 +1,24 @@
 "use client"
 
 import * as React from "react"
-import { FileText, Loader2, Paperclip, X } from "lucide-react"
+import { FileImage, FileText, Loader2, Paperclip, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import type { Attachment } from "@/components/app-shell"
+import {
+  ATTACHMENT_ROLE_LABELS,
+  type AcademicAttachment,
+  type AttachmentRole,
+} from "@/types/academic"
 
 interface FileDropzoneProps {
-  attachments: Attachment[]
+  attachments: AcademicAttachment[]
   onFilesSelected: (files: File[]) => void
   onRemove: (id: string) => void
+  onRoleChange?: (id: string, role: AttachmentRole) => void
+  professional?: boolean
 }
 
-const ACCEPTED_EXTENSIONS = [".pdf", ".docx", ".txt"]
+const ACCEPTED_EXTENSIONS = [".pdf", ".docx", ".odt", ".txt", ".png", ".jpg", ".jpeg", ".webp"]
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -20,7 +26,13 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function FileDropzone({ attachments, onFilesSelected, onRemove }: FileDropzoneProps) {
+export function FileDropzone({
+  attachments,
+  onFilesSelected,
+  onRemove,
+  onRoleChange,
+  professional = false,
+}: FileDropzoneProps) {
   const [isDragging, setIsDragging] = React.useState(false)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
@@ -35,7 +47,11 @@ export function FileDropzone({ attachments, onFilesSelected, onRemove }: FileDro
         role="button"
         tabIndex={0}
         onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return
+          event.preventDefault()
+          inputRef.current?.click()
+        }}
         onDragOver={(e) => {
           e.preventDefault()
           setIsDragging(true)
@@ -53,12 +69,14 @@ export function FileDropzone({ attachments, onFilesSelected, onRemove }: FileDro
       >
         <Paperclip className="h-5 w-5 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">
-          Arrastra lecturas aquí o{" "}
+          Arrastra materiales aquí o{" "}
           <span className="font-medium text-foreground underline underline-offset-2">
             selecciona archivos
           </span>
         </p>
-        <p className="text-xs text-muted-foreground/70">PDF, DOCX o TXT</p>
+        <p className="text-xs text-muted-foreground/70">
+          PDF, PDF escaneado, imagen, DOCX o TXT
+        </p>
         <input
           ref={inputRef}
           type="file"
@@ -77,10 +95,19 @@ export function FileDropzone({ attachments, onFilesSelected, onRemove }: FileDro
           {attachments.map((attachment) => (
             <li
               key={attachment.id}
-              className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm"
+              className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm"
             >
               {attachment.status === "extracting" ? (
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+              ) : attachment.kind === "image" ? (
+                <FileImage
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    attachment.status === "error"
+                      ? "text-destructive"
+                      : "text-muted-foreground"
+                  )}
+                />
               ) : (
                 <FileText
                   className={cn(
@@ -90,6 +117,26 @@ export function FileDropzone({ attachments, onFilesSelected, onRemove }: FileDro
                 />
               )}
               <span className="flex-1 truncate">{attachment.name}</span>
+              {professional && onRoleChange && attachment.status !== "error" && (
+                <select
+                  value={attachment.role}
+                  onChange={(event) =>
+                    onRoleChange(
+                      attachment.id,
+                      event.target.value as AttachmentRole
+                    )
+                  }
+                  onClick={(event) => event.stopPropagation()}
+                  className="order-last h-7 w-full rounded-md border border-input bg-background px-2 text-xs lg:order-none lg:w-auto lg:max-w-44"
+                  aria-label={`Función de ${attachment.name}`}
+                >
+                  {Object.entries(ATTACHMENT_ROLE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              )}
               <span className="shrink-0 text-xs text-muted-foreground">
                 {formatSize(attachment.size)}
               </span>
@@ -101,6 +148,9 @@ export function FileDropzone({ attachments, onFilesSelected, onRemove }: FileDro
               >
                 <X className="h-3.5 w-3.5" />
               </button>
+              {attachment.error && (
+                <span className="sr-only">{attachment.error}</span>
+              )}
             </li>
           ))}
         </ul>

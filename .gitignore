@@ -15,10 +15,18 @@
 
 # next.js
 /.next/
+/.next-dev/
 /out/
+/renderer-out/
+/renderer-build/
 
 # production
 /build
+/dist-electron
+/release
+/release-*/
+/out
+/tmp
 
 # misc
 .DS_Store

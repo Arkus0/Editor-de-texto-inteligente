@@ -9,7 +9,7 @@ export interface AiAction {
 }
 
 const CLEAN_OUTPUT =
-  "Responde ÚNICAMENTE con el texto resultante, en prosa continua, sin comillas, sin comentarios, títulos ni introducciones."
+  "Responde ÚNICAMENTE con el texto resultante, respetando el formato y el género del documento, sin comillas, comentarios ni introducciones sobre la tarea."
 
 /** Acciones sobre el fragmento seleccionado. El resultado reemplaza el fragmento. */
 export const SELECTION_ACTIONS: AiAction[] = [
@@ -43,7 +43,29 @@ export const SELECTION_ACTIONS: AiAction[] = [
     id: "tone",
     label: "Cambiar tono",
     scope: "selection",
-    instruction: () => "Reescribe este fragmento con un tono aún más académico y riguroso.",
+    instruction: () =>
+      "Reescribe este fragmento con un tono profesional, claro y adecuado al propósito y a los destinatarios del documento.",
+  },
+  {
+    id: "strengthen-argument",
+    label: "Reforzar argumento",
+    scope: "selection",
+    instruction: () =>
+      "Reescribe este fragmento reforzando su razonamiento, haciendo explícitas las premisas necesarias y anticipando la objeción más relevante, sin inventar datos ni fuentes.",
+  },
+  {
+    id: "clarify-concepts",
+    label: "Precisar conceptos",
+    scope: "selection",
+    instruction: () =>
+      "Reescribe este fragmento definiendo con precisión los conceptos decisivos y distinguiéndolos de nociones próximas, sin volver el texto artificial ni redundante.",
+  },
+  {
+    id: "check-attributions",
+    label: "Verificar afirmaciones",
+    scope: "selection",
+    instruction: () =>
+      "Revisa las cifras, nombres, fechas, citas, fuentes y afirmaciones verificables del fragmento. Señala o corrige formulaciones imprecisas y no inventes referencias.",
   },
 ]
 
@@ -76,6 +98,20 @@ export const DOCUMENT_ACTIONS: AiAction[] = [
     scope: "document",
     instruction: () =>
       `Reescribe el documento completo mejorando su redacción, cohesión y elegancia, manteniendo todas sus ideas y su longitud aproximada. ${CLEAN_OUTPUT}`,
+  },
+  {
+    id: "philosophical-review",
+    label: "Revisión integral",
+    scope: "document",
+    instruction: () =>
+      `Reescribe el documento completo tras auditar propósito, destinatarios, estructura, claridad, coherencia, precisión, tono y calidad de la redacción. Conserva cualquier estructura o requisito obligatorio y no inventes datos ni fuentes. ${CLEAN_OUTPUT}`,
+  },
+  {
+    id: "requirements-audit",
+    label: "Comprobar requisitos",
+    scope: "document",
+    instruction: () =>
+      "Comprueba el documento frente a las instrucciones y materiales adjuntos. Identifica de forma numerada qué requisitos están cubiertos, cuáles faltan y qué cambios concretos conviene hacer. No reescribas todavía el documento.",
   },
 ]
 

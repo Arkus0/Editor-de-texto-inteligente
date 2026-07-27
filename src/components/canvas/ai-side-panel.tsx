@@ -34,7 +34,7 @@ function PanelHeader({ modelLabel, onClose }: { modelLabel: string; onClose: () 
           <Sparkles className="h-3.5 w-3.5" />
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold">Gemini</span>
+          <span className="text-sm font-semibold">Asistente IA</span>
           <span className="max-w-[220px] truncate text-[10px] text-muted-foreground">{modelLabel}</span>
         </div>
       </div>
@@ -69,13 +69,13 @@ export function AiSidePanel({ expanded, onToggle, modelLabel, children }: AiSide
               size="icon"
               className="h-9 w-9 rounded-lg text-primary hover:bg-primary/10"
               onClick={onToggle}
-              aria-label="Abrir el asistente Gemini"
-              title="Abrir el asistente Gemini (Ctrl/⌘ + J)"
+              aria-label="Abrir el asistente de IA"
+              title="Abrir el asistente de IA (Ctrl/⌘ + J)"
             >
               <Sparkles className="h-5 w-5" />
             </Button>
             <span className="mt-1 text-[10px] font-medium tracking-wide text-muted-foreground [writing-mode:vertical-rl]">
-              Gemini
+              Asistente
             </span>
           </div>
         )}
@@ -84,7 +84,7 @@ export function AiSidePanel({ expanded, onToggle, modelLabel, children }: AiSide
       {/* Móvil: hoja lateral */}
       <Sheet open={expanded && !isDesktop} onOpenChange={onToggle}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
-          <SheetTitle className="sr-only">Asistente Gemini</SheetTitle>
+          <SheetTitle className="sr-only">Asistente de IA</SheetTitle>
           <PanelHeader modelLabel={modelLabel} onClose={onToggle} />
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
         </SheetContent>

@@ -2,115 +2,302 @@
 
 import * as React from "react"
 import {
+  ArrowDown,
+  ArrowUp,
+  Check,
   ChevronDown,
-  Download,
-  FileText,
+  Focus,
+  FolderOpen,
   History,
   PanelRight,
-  Settings,
-  Sparkles,
+  Printer,
+  Redo2,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  Undo2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ThemeToggle } from "@/components/chrome/theme-toggle"
+import {
+  CommandSearch,
+  type AppCommandId,
+} from "@/components/chrome/command-search"
 import { cn } from "@/lib/utils"
+import {
+  QUICK_ACCESS_COMMANDS,
+  type QuickAccessCommandId,
+  useUiPreferencesStore,
+} from "@/store/useUiPreferencesStore"
 
-export type ExportFormat = "pdf" | "docx" | "md" | "txt"
+export type ExportFormat = "pdf" | "docx" | "odt" | "md" | "txt"
 
 interface TitleBarProps {
-  docName: string
-  onDocNameChange: (value: string) => void
+  documentTabs: React.ReactNode
   onOpenHistory: () => void
-  onOpenSettings: () => void
+  onOpenDocument?: () => void
+  onSaveDocument?: () => void
+  onUndo?: () => void
+  onRedo?: () => void
+  canUndo?: boolean
+  canRedo?: boolean
   onToggleAi: () => void
   aiOpen: boolean
-  onExport: (format: ExportFormat) => void
   canExport: boolean
-  isExporting: boolean
+  isDirty?: boolean
+  editing: boolean
+  desktop: boolean
+  onCommand: (command: AppCommandId) => void
 }
 
-const EXPORT_ITEMS: { format: ExportFormat; label: string }[] = [
-  { format: "pdf", label: "PDF (.pdf)" },
-  { format: "docx", label: "Word (.docx)" },
-  { format: "md", label: "Markdown (.md)" },
-  { format: "txt", label: "Texto (.txt)" },
-]
+const QUICK_ACCESS_ITEMS: Record<
+  QuickAccessCommandId,
+  {
+    label: string
+    shortcut?: string
+    icon: React.ComponentType<{ className?: string }>
+  }
+> = {
+  save: { label: "Guardar", shortcut: "Ctrl+S", icon: Save },
+  undo: { label: "Deshacer", shortcut: "Ctrl+Z", icon: Undo2 },
+  redo: { label: "Rehacer", shortcut: "Ctrl+Y", icon: Redo2 },
+  open: { label: "Abrir", shortcut: "Ctrl+O", icon: FolderOpen },
+  print: { label: "Imprimir", shortcut: "Ctrl+P", icon: Printer },
+  focus: { label: "Modo Enfoque", shortcut: "Alt+W, O", icon: Focus },
+  accessibility: {
+    label: "Comprobar accesibilidad",
+    icon: ShieldCheck,
+  },
+}
 
 export function TitleBar({
-  docName,
-  onDocNameChange,
+  documentTabs,
   onOpenHistory,
-  onOpenSettings,
+  onOpenDocument,
+  onSaveDocument,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
   onToggleAi,
   aiOpen,
-  onExport,
   canExport,
-  isExporting,
+  isDirty,
+  editing,
+  desktop,
+  onCommand,
 }: TitleBarProps) {
+  const quickAccessCommands = useUiPreferencesStore(
+    (state) => state.quickAccessCommands
+  )
+  const toggleQuickAccessCommand = useUiPreferencesStore(
+    (state) => state.toggleQuickAccessCommand
+  )
+  const moveQuickAccessCommand = useUiPreferencesStore(
+    (state) => state.moveQuickAccessCommand
+  )
+  const resetQuickAccessCommands = useUiPreferencesStore(
+    (state) => state.resetQuickAccessCommands
+  )
+
+  const quickAccessDisabled = (command: QuickAccessCommandId) => {
+    if (command === "save") return !editing || !onSaveDocument
+    if (command === "undo") return !onUndo || !canUndo
+    if (command === "redo") return !onRedo || !canRedo
+    if (command === "open") return !onOpenDocument
+    return !editing
+  }
+
+  const runQuickAccessCommand = (command: QuickAccessCommandId) => {
+    if (command === "save") onSaveDocument?.()
+    else if (command === "undo") onUndo?.()
+    else if (command === "redo") onRedo?.()
+    else if (command === "open") onOpenDocument?.()
+    else if (command === "print") onCommand("file:print")
+    else if (command === "focus") onCommand("view:focus")
+    else if (command === "accessibility") onCommand("view:accessibility")
+  }
+
   return (
-    <header className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-card px-4 py-2">
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Sparkles className="h-4 w-4" />
-        </div>
-        <div className="flex min-w-0 flex-col">
-          <input
-            value={docName}
-            onChange={(e) => onDocNameChange(e.target.value)}
-            aria-label="Nombre del documento"
-            className="w-full min-w-0 truncate rounded-sm bg-transparent text-sm font-semibold outline-none hover:bg-accent/60 focus:bg-accent/60 focus:ring-1 focus:ring-ring"
-            spellCheck={false}
-          />
-          <span className="text-[11px] text-muted-foreground">Editor de Texto Inteligente</span>
-        </div>
+    <header className="grid h-11 shrink-0 grid-cols-[minmax(0,1fr)_minmax(220px,420px)_minmax(0,1fr)] items-center gap-2 border-b border-border bg-card px-2 max-md:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="flex min-w-0 items-center gap-2">
+        {documentTabs}
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
-        <Button variant="ghost" size="sm" onClick={onOpenHistory} className="hidden sm:inline-flex">
-          <History />
-          Historial
-        </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 sm:hidden" onClick={onOpenHistory} aria-label="Historial">
-          <History className="h-4 w-4" />
-        </Button>
+      <div className="min-w-0 max-md:hidden">
+        <CommandSearch
+          editing={editing}
+          desktop={desktop}
+          hasContent={canExport}
+          onCommand={onCommand}
+        />
+      </div>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" disabled={!canExport || isExporting}>
-              <Download />
-              <span className="hidden sm:inline">Exportar</span>
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-44 p-1">
-            {EXPORT_ITEMS.map((item) => (
-              <button
-                key={item.format}
-                onClick={() => onExport(item.format)}
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-              >
-                <FileText className="h-4 w-4" /> {item.label}
-              </button>
-            ))}
-          </PopoverContent>
-        </Popover>
-
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onOpenSettings} aria-label="Ajustes">
-          <Settings className="h-4 w-4" />
-        </Button>
-
-        <ThemeToggle />
-
-        <Button
-          variant={aiOpen ? "default" : "outline"}
-          size="sm"
-          onClick={onToggleAi}
-          className={cn("gap-1.5", aiOpen && "bg-primary text-primary-foreground hover:bg-primary/90")}
+      <div className="flex min-w-0 items-center justify-end gap-1.5">
+        <div
+          className="hidden items-center gap-0.5 border-l border-border pl-1 sm:flex"
+          aria-label="Barra de acceso rápido"
         >
-          <PanelRight className="h-4 w-4" />
-          <span className="hidden sm:inline">Gemini</span>
+          {quickAccessCommands.map((command) => {
+            const item = QUICK_ACCESS_ITEMS[command]
+            const Icon = item.icon
+            return (
+              <Button
+                key={command}
+                variant={command === "save" && isDirty ? "outline" : "ghost"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => runQuickAccessCommand(command)}
+                disabled={quickAccessDisabled(command)}
+                aria-label={item.label}
+                title={
+                  item.shortcut
+                    ? `${item.label} (${item.shortcut})`
+                    : item.label
+                }
+              >
+                <Icon className="h-4 w-4" />
+              </Button>
+            )
+          })}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-6"
+                aria-label="Personalizar barra de acceso rápido"
+                title="Personalizar barra de acceso rápido"
+              >
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 p-2">
+              <div className="px-2 pb-2">
+                <p className="text-sm font-semibold">
+                  Barra de acceso rápido
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Se guarda solo en este equipo.
+                </p>
+              </div>
+              <div className="space-y-0.5">
+                {QUICK_ACCESS_COMMANDS.map((command) => {
+                  const item = QUICK_ACCESS_ITEMS[command]
+                  const Icon = item.icon
+                  const selected = quickAccessCommands.includes(command)
+                  return (
+                    <button
+                      key={command}
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent"
+                      onClick={() => toggleQuickAccessCommand(command)}
+                    >
+                      <span className="flex h-4 w-4 items-center justify-center">
+                        {selected && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <span className="flex-1">{item.label}</span>
+                      {item.shortcut && (
+                        <span className="text-[11px] text-muted-foreground">
+                          {item.shortcut}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              {quickAccessCommands.length > 1 && (
+                <>
+                  <div className="my-2 border-t border-border" />
+                  <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Orden
+                  </p>
+                  <div className="space-y-0.5">
+                    {quickAccessCommands.map((command, index) => {
+                      const item = QUICK_ACCESS_ITEMS[command]
+                      return (
+                        <div
+                          key={command}
+                          className="flex items-center gap-2 rounded-md px-2 py-1 text-sm"
+                        >
+                          <span className="min-w-0 flex-1 truncate">
+                            {item.label}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            disabled={index === 0}
+                            onClick={() =>
+                              moveQuickAccessCommand(command, -1)
+                            }
+                            aria-label={`Subir ${item.label}`}
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            disabled={
+                              index === quickAccessCommands.length - 1
+                            }
+                            onClick={() =>
+                              moveQuickAccessCommand(command, 1)
+                            }
+                            aria-label={`Bajar ${item.label}`}
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+              <div className="mt-2 border-t border-border pt-2">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                  onClick={resetQuickAccessCommands}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Restaurar valores predeterminados
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onOpenHistory}
+          aria-label="Historial de respuestas de IA"
+          title="Historial de respuestas de IA guardadas"
+        >
+          <History />
+          <span className="hidden 2xl:inline">Historial IA</span>
         </Button>
+
+        <div className="flex items-center gap-1.5 border-l border-border pl-1.5">
+          <ThemeToggle />
+
+          <Button
+            variant={aiOpen ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleAi}
+            aria-label="Asistente IA"
+            className={cn("gap-1.5", aiOpen && "bg-primary text-primary-foreground hover:bg-primary/90")}
+          >
+            <PanelRight className="h-4 w-4" />
+            <span className="hidden xl:inline">IA</span>
+          </Button>
+        </div>
       </div>
     </header>
   )

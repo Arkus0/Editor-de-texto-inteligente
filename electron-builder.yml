@@ -1,0 +1,18 @@
+appId: com.editorinteligenteia.app
+productName: Editor Inteligente IA
+directories:
+  output: release
+files:
+  - renderer-build/**/*
+  - electron/**/*
+  - package.json
+asar: true
+asarUnpack:
+  - node_modules/better-sqlite3/**/*
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: src/app/favicon.ico
+  artifactName: Editor-Inteligente-IA-Portable-${version}.${ext}

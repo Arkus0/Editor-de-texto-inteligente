@@ -1,8 +1,23 @@
 "use client"
 
 import * as React from "react"
-import { PinOff, RotateCcw, Save, Trash2 } from "lucide-react"
+import {
+  BookOpenText,
+  Bot,
+  CheckCircle2,
+  CircleAlert,
+  ExternalLink,
+  KeyRound,
+  LoaderCircle,
+  RotateCcw,
+  Route,
+  ShieldCheck,
+} from "lucide-react"
 
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Sheet,
   SheetContent,
@@ -10,252 +25,364 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AVAILABLE_MODELS } from "@/lib/gemini"
+import { DEFAULT_SYSTEM_PROMPT } from "@/lib/gemini"
+import {
+  friendlyOpenRouterErrorMessage,
+  testOpenRouterApiKey,
+} from "@/lib/openrouter"
+import { useAcademicStore } from "@/store/useAcademicStore"
 import { useSettingsStore } from "@/store/useSettingsStore"
-import { useSystemPromptStore } from "@/store/useSystemPromptStore"
 
 interface SettingsDrawerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
+export function SettingsDrawer({
+  open,
+  onOpenChange,
+}: SettingsDrawerProps) {
   const {
+    provider,
+    setProvider,
     apiKey,
-    model,
-    temperature,
-    topP,
-    unrestrictedMode,
-    systemPrompt,
     setApiKey,
-    setModel,
-    setTemperature,
-    setTopP,
-    setUnrestrictedMode,
+    openRouterApiKey,
+    setOpenRouterApiKey,
+    systemPrompt,
     setSystemPrompt,
     resetSystemPrompt,
   } = useSettingsStore()
+  const activeProviderName =
+    provider === "openrouter" ? "OpenRouter" : "Gemini"
+  const activeApiKey =
+    provider === "openrouter" ? openRouterApiKey : apiKey
+  const workspaceMode = useAcademicStore((state) => state.mode)
+  const professionalSystemPrompt = useAcademicStore(
+    (state) => state.professionalSettings.systemPrompt
+  )
+  const updateProfessionalSettings = useAcademicStore(
+    (state) => state.updateProfessionalSettings
+  )
+  const activeSystemPrompt =
+    workspaceMode === "professional" ? professionalSystemPrompt : systemPrompt
+  const setActiveSystemPrompt = (value: string) => {
+    if (workspaceMode === "professional") {
+      updateProfessionalSettings({ systemPrompt: value })
+    } else {
+      setSystemPrompt(value)
+    }
+  }
+  const resetActiveSystemPrompt = () => {
+    if (workspaceMode === "professional") {
+      updateProfessionalSettings({ systemPrompt: DEFAULT_SYSTEM_PROMPT })
+    } else {
+      resetSystemPrompt()
+    }
+  }
+  const apiKeyConfigured = Boolean(activeApiKey.trim())
+  const [apiKeyDraft, setApiKeyDraft] = React.useState("")
+  const [savingKey, setSavingKey] = React.useState(false)
+  const [keyStatus, setKeyStatus] = React.useState<
+    "idle" | "testing" | "success" | "error"
+  >(apiKeyConfigured ? "success" : "idle")
+  const [keyMessage, setKeyMessage] = React.useState("")
 
-  const { prompts, save: saveSystemPrompt, promote, remove: removeSystemPrompt } = useSystemPromptStore()
-  const [newPromptName, setNewPromptName] = React.useState("")
+  const handleSaveApiKey = async () => {
+    const nextKey = apiKeyDraft.trim()
+    if (!nextKey) return
+    setSavingKey(true)
+    setKeyStatus("testing")
+    setKeyMessage(
+      `Guardando y comprobando la conexión con ${activeProviderName}…`
+    )
+    try {
+      if (provider === "openrouter") {
+        const result = await testOpenRouterApiKey(nextKey)
+        setOpenRouterApiKey(nextKey)
+        setKeyMessage(
+          result.is_free_tier
+            ? "Conexión correcta. La cuenta está en el nivel gratuito."
+            : "Conexión correcta. Puedes usar el enrutador gratuito o cualquier modelo habilitado."
+        )
+      } else if (window.editorDesktop) {
+        const result = await window.editorDesktop.ai.testKey(nextKey)
+        setApiKey(nextKey)
+        setKeyMessage(`Conexión correcta. Modelo comprobado: ${result.model}.`)
+      } else {
+        setApiKey(nextKey)
+        setKeyMessage("Clave guardada en el almacenamiento local de esta aplicación.")
+      }
+      setKeyStatus("success")
+      setApiKeyDraft("")
+    } catch (error) {
+      setKeyStatus("error")
+      setKeyMessage(
+        provider === "openrouter"
+          ? friendlyOpenRouterErrorMessage(error)
+          : error instanceof Error
+            ? error.message
+          : `${activeProviderName} no aceptó la clave. Revisa que esté completa y vuelve a intentarlo.`
+      )
+    } finally {
+      setSavingKey(false)
+    }
+  }
 
-  const pinnedPrompts = prompts.filter((p) => p.pinned)
-  const recentPrompts = prompts.filter((p) => !p.pinned)
+  const handleClearApiKey = () => {
+    if (provider === "openrouter") setOpenRouterApiKey("")
+    else setApiKey("")
+    setApiKeyDraft("")
+    setKeyStatus("idle")
+    setKeyMessage("")
+  }
 
-  const handleSaveCurrent = () => {
-    if (!newPromptName.trim()) return
-    saveSystemPrompt(newPromptName, systemPrompt)
-    setNewPromptName("")
+  const openApiKeyPage = () => {
+    const url =
+      provider === "openrouter"
+        ? "https://openrouter.ai/settings/keys"
+        : "https://aistudio.google.com/apikey"
+    if (window.editorDesktop) {
+      void window.editorDesktop.windows.openExternal(url)
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer")
+    }
   }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 sm:max-w-md">
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 sm:max-w-md"
+      >
         <SheetHeader>
-          <SheetTitle>Ajustes de generación</SheetTitle>
+          <SheetTitle>Ajustes de IA</SheetTitle>
           <SheetDescription>
-            Configura el acceso a la API de Gemini y el comportamiento del modelo.
+            Elige proveedor, configura su clave y controla las instrucciones
+            que guían la redacción.
           </SheetDescription>
         </SheetHeader>
 
         <ScrollArea className="-mx-6 mt-4 flex-1 px-6">
-          <div className="space-y-6 pb-8">
-            <div className="space-y-2">
-              <Label htmlFor="api-key">API Key de Google AI Studio</Label>
-              <Input
-                id="api-key"
-                type="password"
-                autoComplete="off"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="AIza…"
+          <div className="space-y-5 pb-8">
+            <div
+              className="grid grid-cols-2 gap-2 rounded-xl border border-border p-1"
+              role="group"
+              aria-label="Proveedor de IA activo"
+            >
+              <Button
+                type="button"
+                variant={provider === "gemini" ? "default" : "ghost"}
+                aria-pressed={provider === "gemini"}
+                onClick={() => {
+                  setProvider("gemini")
+                  setKeyStatus(apiKey.trim() ? "success" : "idle")
+                  setKeyMessage("")
+                  setApiKeyDraft("")
+                }}
+              >
+                <Bot />
+                Gemini
+              </Button>
+              <Button
+                type="button"
+                variant={provider === "openrouter" ? "default" : "ghost"}
+                aria-pressed={provider === "openrouter"}
+                onClick={() => {
+                  setProvider("openrouter")
+                  setKeyStatus(
+                    openRouterApiKey.trim() ? "success" : "idle"
+                  )
+                  setKeyMessage("")
+                  setApiKeyDraft("")
+                }}
+              >
+                <Route />
+                OpenRouter gratis
+              </Button>
+            </div>
+
+            <div className="space-y-4 rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
+              <div className="space-y-1">
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <KeyRound className="h-4 w-4" />
+                  Activar {activeProviderName}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {typeof window !== "undefined" && window.editorDesktop
+                    ? "La clave se guarda en el perfil local de esta aplicación."
+                    : "La clave se guarda en el almacenamiento local de este navegador."}
+                </p>
+              </div>
+
+              <ol className="space-y-3 text-sm">
+                <li className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    1
+                  </span>
+                  <div className="space-y-2">
+                    <p>
+                      Crea una API Key en{" "}
+                      {provider === "openrouter"
+                        ? "OpenRouter"
+                        : "Google AI Studio"}
+                      .
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={openApiKeyPage}
+                    >
+                      <ExternalLink />
+                      Abrir{" "}
+                      {provider === "openrouter"
+                        ? "OpenRouter"
+                        : "Google AI Studio"}
+                    </Button>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    2
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Label htmlFor="api-key">Pega aquí la API Key</Label>
+                    <Input
+                      id="api-key"
+                      type="password"
+                      autoComplete="off"
+                      value={apiKeyDraft}
+                      onChange={(event) => {
+                        setApiKeyDraft(event.target.value)
+                        if (keyStatus === "error") setKeyStatus("idle")
+                      }}
+                      onKeyDown={(event) =>
+                        event.key === "Enter" && void handleSaveApiKey()
+                      }
+                      placeholder={
+                        apiKeyConfigured
+                          ? "Clave configurada; pega otra para reemplazarla"
+                          : provider === "openrouter"
+                            ? "sk-or-v1-…"
+                            : "AIza…"
+                      }
+                    />
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    3
+                  </span>
+                  <Button
+                    type="button"
+                    className="flex-1"
+                    onClick={() => void handleSaveApiKey()}
+                    disabled={!apiKeyDraft.trim() || savingKey}
+                  >
+                    {savingKey ? (
+                      <LoaderCircle className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 />
+                    )}
+                    Guardar y comprobar
+                  </Button>
+                </li>
+              </ol>
+
+              {keyStatus !== "idle" && (
+                <div
+                  role="status"
+                  className={
+                    keyStatus === "error"
+                      ? "flex gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
+                      : keyStatus === "success"
+                        ? "flex gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-300"
+                        : "flex gap-2 rounded-lg border p-3 text-xs text-muted-foreground"
+                  }
+                >
+                  {keyStatus === "testing" ? (
+                    <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
+                  ) : keyStatus === "error" ? (
+                    <CircleAlert className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  )}
+                  <span>
+                    {keyMessage ||
+                      (apiKeyConfigured
+                        ? `Clave de ${activeProviderName} configurada.`
+                        : "Introduce una clave para continuar.")}
+                  </span>
+                </div>
+              )}
+
+              {apiKeyConfigured && (
+                <button
+                  type="button"
+                  onClick={handleClearApiKey}
+                  className="text-left text-xs text-muted-foreground underline-offset-4 hover:text-destructive hover:underline"
+                >
+                  Eliminar la clave guardada
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="flex items-center gap-2 text-sm font-semibold">
+                    <BookOpenText className="h-4 w-4 text-primary" />
+                    Prompt maestro activo
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Se usa en el modo{" "}
+                    {workspaceMode === "professional"
+                      ? "Profesional"
+                      : "Rápido"}{" "}
+                    para el borrador y para las modificaciones del asistente.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={resetActiveSystemPrompt}
+                  aria-label="Restaurar prompt maestro"
+                  title="Restaurar prompt maestro"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+              <Label htmlFor="active-system-prompt" className="sr-only">
+                Prompt maestro activo
+              </Label>
+              <Textarea
+                id="active-system-prompt"
+                value={activeSystemPrompt}
+                onChange={(event) => setActiveSystemPrompt(event.target.value)}
+                className="min-h-48 font-mono text-xs leading-relaxed"
               />
               <p className="text-xs text-muted-foreground">
-                Se guarda únicamente en el almacenamiento local de tu navegador.
+                Los perfiles profesionales pueden guardar prompts diferentes.
               </p>
             </div>
 
-            <Separator />
-
-            <div className="space-y-2">
-              <Label>Modelo</Label>
-              <Tabs value={model} onValueChange={(value) => setModel(value as typeof model)}>
-                <TabsList className="grid h-auto w-full grid-cols-1 gap-1">
-                  {AVAILABLE_MODELS.map((m) => (
-                    <TabsTrigger key={m.id} value={m.id} className="justify-start px-3 py-2 text-left">
-                      {m.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="temperature">Temperatura</Label>
-                <span className="text-sm tabular-nums text-muted-foreground">
-                  {temperature.toFixed(2)}
-                </span>
-              </div>
-              <Slider
-                id="temperature"
-                min={0}
-                max={2}
-                step={0.01}
-                value={[temperature]}
-                onValueChange={([value]) => setTemperature(value)}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="top-p">Top-P</Label>
-                <span className="text-sm tabular-nums text-muted-foreground">
-                  {topP.toFixed(2)}
-                </span>
-              </div>
-              <Slider
-                id="top-p"
-                min={0}
-                max={1}
-                step={0.01}
-                value={[topP]}
-                onValueChange={([value]) => setTopP(value)}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
-              <div className="space-y-1">
-                <Label htmlFor="unrestricted">Modo Académico Sin Restricciones</Label>
-                <p className="text-xs text-muted-foreground">
-                  Desactiva los filtros de seguridad del modelo (BLOCK_NONE) para evitar falsos
-                  positivos en temas académicos complejos.
-                </p>
-              </div>
-              <Switch
-                id="unrestricted"
-                checked={unrestrictedMode}
-                onCheckedChange={setUnrestrictedMode}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="system-prompt">System Prompt</Label>
-                <Button variant="ghost" size="sm" onClick={resetSystemPrompt}>
-                  <RotateCcw />
-                  Restaurar
-                </Button>
-              </div>
-              <Textarea
-                id="system-prompt"
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                className="min-h-[280px] font-mono text-xs leading-relaxed"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Guardar prompt actual</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newPromptName}
-                  onChange={(e) => setNewPromptName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveCurrent()}
-                  placeholder="Nombre, p. ej. «Tono ensayístico duro»"
-                  className="h-9 text-sm"
-                />
-                <Button size="sm" onClick={handleSaveCurrent} disabled={!newPromptName.trim()}>
-                  <Save className="h-3.5 w-3.5" />
-                  Guardar
-                </Button>
-              </div>
-
-              {(pinnedPrompts.length > 0 || recentPrompts.length > 0) && (
-                <div className="space-y-1.5 pt-1">
-                  {pinnedPrompts.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setSystemPrompt(p.prompt)}
-                        className="flex-1 truncate text-left font-medium hover:underline"
-                        title={p.prompt}
-                      >
-                        {p.name}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeSystemPrompt(p.id)}
-                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
-                        aria-label={`Eliminar «${p.name}»`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {recentPrompts.length > 0 && (
-                    <>
-                      <p className="pt-2 text-xs font-medium text-muted-foreground">
-                        Usados recientemente
-                      </p>
-                      {recentPrompts.map((p) => (
-                        <div
-                          key={p.id}
-                          className="flex items-center gap-2 rounded-md border border-dashed border-border px-2.5 py-1.5 text-xs"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setSystemPrompt(p.prompt)}
-                            className="flex-1 truncate text-left text-muted-foreground hover:underline"
-                            title={p.prompt}
-                          >
-                            {p.prompt.slice(0, 60)}
-                            {p.prompt.length > 60 ? "…" : ""}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const name = window.prompt("Nombre para este system prompt:")
-                              if (name?.trim()) promote(p.id, name)
-                            }}
-                            className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                            aria-label="Guardar en favoritos"
-                          >
-                            <PinOff className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeSystemPrompt(p.id)}
-                            className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
-                            aria-label="Eliminar del historial"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              )}
+            <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Control y privacidad
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                El documento y los materiales solo se envían al proveedor
+                activo cuando generas contenido o escribes al asistente. El
+                núcleo estable usa una sola solicitud por acción, sin
+                reintentos automáticos. OpenRouter reenvía la solicitud al
+                proveedor del modelo que seleccione; sus límites gratuitos,
+                privacidad y disponibilidad pueden variar. Los controles solo
+                aparecen cuando el modelo admite realmente esos parámetros.
+              </p>
             </div>
           </div>
         </ScrollArea>

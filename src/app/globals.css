@@ -100,8 +100,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
+  --font-sans: "Inter", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Merriweather", "Merriweather Fallback", Georgia, serif;
 }
 
 body {
@@ -110,7 +110,12 @@ body {
 
 /* --- Página de documento tipo Word --- */
 .doc-page {
-  background-color: hsl(var(--card));
+  /* Fondo real de la página. Las etiquetas que se superponen al texto —el
+     rótulo de un salto de sección continuo, el de un cuadro de texto— tienen
+     que taparlo para poder leerse, y el usuario puede cambiarlo desde Diseño,
+     así que el lienzo lo sobrescribe con el color elegido. */
+  --document-page-background: hsl(var(--card));
+  background-color: var(--document-page-background);
   width: 100%;
   max-width: 816px; /* ~8.5in a 96dpi */
   min-height: 1056px; /* ~11in */
@@ -122,10 +127,264 @@ body {
     0 12px 32px -8px hsl(var(--foreground) / 0.18);
 }
 
+.doc-page.academic-workspace-page {
+  max-width: 1180px;
+  min-height: 720px;
+  border-radius: 18px;
+}
+
+@media (max-width: 720px) {
+  .doc-page.academic-workspace-page {
+    width: calc(100vw - 24px) !important;
+    padding: 16px !important;
+    border-radius: 12px;
+  }
+}
+
+.document-ruler {
+  cursor: crosshair;
+  overflow: hidden;
+  touch-action: none;
+  border-radius: 2px;
+  background-color: hsl(var(--muted));
+  background-image:
+    linear-gradient(
+      to bottom,
+      transparent calc(100% - 1px),
+      hsl(var(--border)) calc(100% - 1px)
+    ),
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 11px,
+      hsl(var(--muted-foreground) / 0.28) 11px,
+      hsl(var(--muted-foreground) / 0.28) 12px
+    ),
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 59px,
+      hsl(var(--muted-foreground) / 0.5) 59px,
+      hsl(var(--muted-foreground) / 0.5) 60px
+    );
+  background-position: 0 0, 0 100%, 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 100% 6px, 100% 11px;
+  box-shadow: inset 0 1px hsl(var(--background) / 0.55);
+}
+
+.document-ruler__margin {
+  position: absolute;
+  inset-block: 0;
+  pointer-events: none;
+  background: hsl(var(--muted-foreground) / 0.09);
+}
+
+.document-ruler__handle,
+.document-ruler__tab {
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  color: hsl(var(--primary));
+  background: transparent;
+  transform: translateX(-50%);
+}
+
+.document-ruler__handle {
+  width: 16px;
+  height: 11px;
+  cursor: ew-resize;
+}
+
+.document-ruler__handle::before {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  content: "";
+  transform: translateX(-50%);
+}
+
+.document-ruler__handle--first-line {
+  top: 0;
+}
+
+.document-ruler__handle--first-line::before {
+  top: 1px;
+  border-top: 6px solid hsl(var(--primary));
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+}
+
+.document-ruler__handle--left,
+.document-ruler__handle--right {
+  bottom: 0;
+}
+
+.document-ruler__handle--left::before,
+.document-ruler__handle--right::before {
+  bottom: 1px;
+  border-right: 5px solid transparent;
+  border-bottom: 6px solid hsl(var(--primary));
+  border-left: 5px solid transparent;
+}
+
+.document-ruler__handle--left::after {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  content: "";
+  background: hsl(var(--primary));
+  transform: translateX(-50%);
+}
+
+.document-ruler__tab {
+  top: 7px;
+  width: 9px;
+  height: 9px;
+  cursor: pointer;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+}
+
+.document-ruler__handle:focus-visible,
+.document-ruler__tab:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+.document-tab-stop {
+  display: inline-block;
+  min-width: 8px;
+  height: 1em;
+  vertical-align: baseline;
+}
+
+.show-formatting-marks .document-tab-stop {
+  position: relative;
+  border-bottom: 1px dotted hsl(var(--primary) / 0.5);
+}
+
+.show-formatting-marks .document-tab-stop::after {
+  position: absolute;
+  right: 2px;
+  bottom: -0.15em;
+  color: hsl(var(--primary) / 0.65);
+  content: "→";
+  font-family: var(--font-sans);
+  font-size: 0.75em;
+}
+
 /* El editor Tiptap ocupa la página con márgenes de documento */
 .doc-page .ProseMirror {
+  position: relative;
+  z-index: 2;
   min-height: 820px;
   outline: none;
+  color: var(--document-body-color, #202020);
+  font-family: var(--document-body-font, Calibri), sans-serif;
+  font-size: var(--document-body-size, 11pt);
+  line-height: var(--document-body-line-height, 1.15);
+}
+
+.document-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  max-width: 90%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hyphenated-document .ProseMirror {
+  hyphens: auto;
+  overflow-wrap: normal;
+}
+
+.doc-page .ProseMirror[data-format-painter="true"] {
+  cursor: copy;
+}
+
+.doc-page .ProseMirror h1,
+.doc-page .ProseMirror .document-style-heading1 {
+  color: var(--document-heading-1-color, #2f5496);
+  font-family: var(--document-heading-1-font, Calibri), sans-serif;
+  font-size: var(--document-heading-1-size, 18pt);
+}
+
+.doc-page .ProseMirror h2,
+.doc-page .ProseMirror .document-style-heading2 {
+  color: var(--document-heading-2-color, #2f5496);
+  font-family: var(--document-heading-2-font, Calibri), sans-serif;
+  font-size: var(--document-heading-2-size, 15pt);
+}
+
+.doc-page .ProseMirror h3,
+.doc-page .ProseMirror .document-style-heading3 {
+  color: var(--document-heading-3-color, #1f3763);
+  font-family: var(--document-heading-3-font, Calibri), sans-serif;
+  font-size: var(--document-heading-3-size, 13pt);
+}
+
+/* Formas */
+.document-shape-box {
+  cursor: default;
+}
+
+.document-resize-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: hsl(var(--primary));
+  border: 1px solid white;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.document-shape-selected .document-resize-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.document-resize-handle-nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+.document-resize-handle-se {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+
+.document-resize-handle-ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.document-resize-handle-sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
 }
 
 /* Placeholder de Tiptap */
@@ -143,8 +402,28 @@ body {
   width: 100%;
   margin: 1rem 0;
 }
+
+.ProseMirror .tableWrapper {
+  overflow-x: auto;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
+
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  bottom: -2px;
+  width: 4px;
+  pointer-events: none;
+  background-color: hsl(var(--primary) / 0.45);
+}
+
 .ProseMirror th,
 .ProseMirror td {
+  position: relative;
   border: 1px solid hsl(var(--border));
   padding: 0.5rem 0.75rem;
   vertical-align: top;
@@ -154,8 +433,609 @@ body {
   font-weight: 600;
 }
 
+.ProseMirror table[data-table-style="plain"] th,
+.ProseMirror table[data-table-style="plain"] td {
+  border-color: transparent;
+}
+
+.ProseMirror table[data-table-style="header"] th {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.ProseMirror table[data-table-style="banded"] tr:nth-child(even) td {
+  background: hsl(var(--muted) / 0.55);
+}
+
+.ProseMirror table[data-table-style="academic"] th,
+.ProseMirror table[data-table-style="academic"] td {
+  border-width: 0 0 1px;
+}
+
+.ProseMirror table[data-table-style="academic"] th {
+  border-bottom: 2px solid hsl(var(--foreground));
+  background: transparent;
+}
+
+.ProseMirror td[data-table-formula]::after,
+.ProseMirror th[data-table-formula]::after {
+  content: "=" attr(data-table-formula);
+  position: absolute;
+  top: 0.125rem;
+  right: 0.25rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.55rem;
+}
+
+.ProseMirror img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
+}
+
+.ProseMirror img[data-image-align="left"] {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+.ProseMirror img[data-image-align="center"] {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.ProseMirror img[data-image-align="right"] {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.ProseMirror img[data-image-wrap="none"] {
+  clear: both;
+}
+
+.ProseMirror img[data-image-wrap="square-left"],
+.ProseMirror img[data-image-wrap="tight-left"] {
+  float: left;
+  clear: left;
+  margin: 0 var(--image-wrap-gap, 12px) var(--image-wrap-gap, 12px) 0;
+}
+
+.ProseMirror img[data-image-wrap="square-right"],
+.ProseMirror img[data-image-wrap="tight-right"] {
+  float: right;
+  clear: right;
+  margin: 0 0 var(--image-wrap-gap, 12px) var(--image-wrap-gap, 12px);
+}
+
+.ProseMirror img[data-image-wrap^="tight-"] {
+  shape-outside: inset(0 round 0.75rem);
+  shape-margin: var(--image-wrap-gap, 12px);
+}
+
+.ProseMirror img[data-image-wrap="behind"],
+.ProseMirror img[data-image-wrap="in-front"] {
+  position: relative;
+  margin-bottom: calc(-1 * var(--image-display-height, 240px));
+}
+
+.ProseMirror img[data-image-wrap="behind"] {
+  z-index: 0;
+}
+
+.ProseMirror img[data-image-wrap="in-front"] {
+  z-index: 10;
+}
+
+.ProseMirror img[data-image-wrap^="square-"] + p,
+.ProseMirror img[data-image-wrap^="tight-"] + p,
+.ProseMirror img[data-image-wrap="behind"] + p,
+.ProseMirror img[data-image-wrap="in-front"] + p {
+  margin-top: 0;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid hsl(var(--primary) / 0.45);
+  outline-offset: 3px;
+}
+
+.ProseMirror .document-bookmark {
+  border-bottom: 1px dotted hsl(var(--primary) / 0.75);
+  background: hsl(var(--primary) / 0.06);
+}
+
+.ProseMirror td img,
+.ProseMirror th img {
+  float: none;
+  clear: both;
+  max-width: 100%;
+  object-fit: contain;
+}
+
 /* Barra de scroll discreta en el escritorio */
 .desk-scroll {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+}
+
+.ribbon-tools {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.28) transparent;
+}
+
+.ribbon-tools::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ribbon-tools::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: hsl(var(--muted-foreground) / 0.28);
+}
+
+.ribbon-style-gallery {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.ribbon-style-gallery::-webkit-scrollbar {
+  display: none;
+}
+
+/* Paginación editable: los huecos se insertan entre bloques para que el
+   contenido nunca quede oculto detrás de una separación de página. */
+.auto-page-break,
+.manual-page-break {
+  position: relative;
+  clear: both;
+  width: calc(100% + var(--page-margin-left) + var(--page-margin-right));
+  margin-inline: calc(-1 * var(--page-margin-left)) calc(-1 * var(--page-margin-right));
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(100% - var(--page-margin-top) - 28px),
+      hsl(var(--desk)) calc(100% - var(--page-margin-top) - 28px),
+      hsl(var(--desk)) calc(100% - var(--page-margin-top)),
+      transparent calc(100% - var(--page-margin-top))
+    );
+}
+
+.auto-page-break::after {
+  content: "Página " attr(data-page);
+  position: absolute;
+  right: 8px;
+  top: calc(100% - var(--page-margin-top) - 23px);
+  color: hsl(var(--muted-foreground));
+  font: 10px/1 var(--font-sans);
+}
+
+.manual-page-break {
+  height: calc(var(--page-margin-bottom) + var(--page-margin-top) + 28px);
+  margin-block: 0;
+  border: 0;
+}
+
+.manual-page-break > span {
+  position: absolute;
+  top: calc(var(--page-margin-bottom) + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: hsl(var(--desk));
+  padding: 3px 10px;
+  color: hsl(var(--muted-foreground));
+  font: 10px/1 var(--font-sans);
+  white-space: nowrap;
+}
+
+.section-break > span {
+  border: 1px dashed hsl(var(--border));
+}
+
+.continuous-section-break {
+  position: relative;
+  clear: both;
+  height: 24px;
+  margin-block: 8px;
+  border-top: 1px dashed hsl(var(--border));
+  pointer-events: none;
+}
+
+.continuous-section-break > span {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--document-page-background);
+  padding-inline: 8px;
+  color: hsl(var(--muted-foreground));
+  font: 10px/1 var(--font-sans);
+  white-space: nowrap;
+}
+
+.document-header-preview,
+.document-footer-preview {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+  color: hsl(var(--muted-foreground));
+  font: 11px/1.25 var(--font-sans);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.doc-page {
+  position: relative;
+}
+
+.multi-column-document .ProseMirror {
+  column-count: var(--document-columns);
+  column-gap: var(--document-column-gap);
+  column-rule: 1px solid hsl(var(--border) / 0.35);
+}
+
+.document-style-title {
+  margin-block: 0 0.75rem !important;
+  color: var(--document-title-color, #2f5496);
+  font-family: var(--document-title-font, "Calibri Light"), Calibri, sans-serif !important;
+  font-size: var(--document-title-size, 28pt) !important;
+  line-height: 1.15 !important;
+}
+
+.document-style-subtitle {
+  margin-block: 0 0.75rem !important;
+  color: var(--document-subtitle-color, #666);
+  font-family: var(--document-subtitle-font, Calibri), sans-serif !important;
+  font-size: var(--document-subtitle-size, 14pt) !important;
+  font-style: italic;
+}
+
+.document-style-bibliography {
+  margin-block: 0 0.4rem !important;
+  padding-left: 2rem;
+  text-indent: -2rem;
+  font-family: "Times New Roman", serif !important;
+}
+
+/* --- Gráficos ---
+   El SVG manda su propio tamaño; aquí solo se centra y se le da el mismo aire
+   que a una figura. */
+.document-chart {
+  display: block;
+  margin: 1.25rem auto;
+  max-width: 100%;
+  text-align: center;
+}
+
+.document-chart svg,
+.document-chart img {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.35rem;
+  background: #ffffff;
+}
+
+.document-chart.ProseMirror-selectednode svg,
+.document-chart.ProseMirror-selectednode img {
+  outline: 2px solid hsl(var(--primary) / 0.55);
+  outline-offset: 2px;
+}
+
+/* --- Campos de formulario ---
+   Se ven como campos, no como texto: fondo tenue y borde inferior. En modo
+   rellenar se marcan más para que se localicen de un vistazo. */
+.document-form-checkbox {
+  display: inline-block;
+  min-width: 1.1em;
+  cursor: pointer;
+  border-radius: 2px;
+  font-family: var(--font-sans);
+  font-size: 1.05em;
+  line-height: 1;
+  user-select: none;
+}
+
+.document-form-checkbox:hover,
+.document-form-checkbox:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+.document-form-text-field,
+.document-form-dropdown {
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+.document-form-text-field__input,
+.document-form-dropdown__select {
+  border: 0;
+  border-bottom: 1px solid hsl(var(--muted-foreground) / 0.7);
+  border-radius: 2px 2px 0 0;
+  background: hsl(var(--primary) / 0.05);
+  padding: 0 0.25em;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.document-form-text-field__input::placeholder {
+  color: hsl(var(--muted-foreground) / 0.75);
+  font-style: italic;
+}
+
+.document-form-text-field__input:focus,
+.document-form-dropdown__select:focus {
+  border-bottom-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+/* Modo rellenar: el documento queda bloqueado y solo los campos aceptan
+   escritura, así que se destacan para que se vea dónde hay que rellenar. */
+.form-fill-mode .document-form-text-field__input,
+.form-fill-mode .document-form-dropdown__select {
+  background: hsl(var(--primary) / 0.12);
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.3);
+}
+
+.form-fill-mode .document-form-checkbox {
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.4);
+}
+
+@media print {
+  .document-form-text-field__input,
+  .document-form-dropdown__select {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Resaltado de la búsqueda. El ámbar es el color con el que el ojo espera ver
+   marcado un resultado, y la coincidencia activa se distingue por contraste
+   —no solo por tono— para que también se localice sin percibir el color. */
+.document-search-match {
+  border-radius: 2px;
+  background: rgb(253 224 71 / 0.55);
+  box-shadow: 0 0 0 1px rgb(202 138 4 / 0.35);
+}
+
+.document-search-match-active {
+  background: rgb(249 115 22 / 0.85);
+  box-shadow: 0 0 0 2px rgb(154 52 18 / 0.85);
+  color: #1a1a1a;
+}
+
+/* Fragmento fijado en el asistente de IA. Usa el color de acento, no el ámbar de
+   la búsqueda, para que no se confunda con un resultado, y un subrayado
+   discontinuo que se distingue del comentario incluso sin percibir el color. */
+.ai-pinned-selection {
+  border-radius: 2px;
+  background: hsl(var(--primary) / 0.16);
+  box-shadow: inset 0 -2px 0 0 hsl(var(--primary) / 0.55);
+}
+
+.document-comment-range {
+  border-bottom: 2px solid #f59e0b;
+  background: rgb(254 243 199 / 0.62);
+  cursor: pointer;
+}
+
+.tracked-insertion {
+  border-bottom: 2px solid #16a34a;
+  background: rgb(220 252 231 / 0.55);
+  text-decoration: none;
+}
+
+.tracked-deletion {
+  background: rgb(255 228 230 / 0.6);
+  color: #be123c;
+  text-decoration: line-through;
+}
+
+.hide-revision-markup .tracked-insertion {
+  border: 0;
+  background: transparent;
+}
+
+.hide-revision-markup .tracked-deletion {
+  display: none;
+}
+
+.footnote-reference,
+.endnote-reference {
+  border-radius: 3px;
+  color: hsl(var(--primary));
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.document-line-number-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.document-line-number {
+  position: absolute;
+  width: 28px;
+  transform: translateY(0.1em);
+  color: hsl(var(--muted-foreground) / 0.72);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  text-align: right;
+}
+
+.citation-field {
+  border-bottom: 1px dotted color-mix(in srgb, var(--primary) 65%, transparent);
+  border-radius: 0.2rem;
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  padding: 0 0.12rem;
+  color: inherit;
+  cursor: pointer;
+}
+
+.citation-field.ProseMirror-selectednode {
+  outline: 2px solid color-mix(in srgb, var(--primary) 65%, transparent);
+  outline-offset: 2px;
+}
+
+.bibliography-field {
+  margin: 1.5rem 0;
+  border-left: 3px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  padding-left: 1rem;
+}
+
+.dynamic-table-of-contents {
+  margin: 1.5rem 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.dynamic-table-of-contents ol {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.dynamic-table-of-contents li {
+  border-bottom: 1px dotted hsl(var(--muted-foreground) / 0.45);
+  padding: 0.2rem 0;
+}
+
+.dynamic-table-of-contents li[data-level="2"] {
+  padding-left: 1.25rem;
+}
+
+.dynamic-table-of-contents li[data-level="3"] {
+  padding-left: 2.5rem;
+}
+
+.document-caption {
+  margin: 0.35rem 0 1rem !important;
+  text-align: center;
+  font-size: 0.9rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.cross-reference-field,
+.citation-field {
+  border-bottom: 1px dotted hsl(var(--primary) / 0.7);
+  color: hsl(var(--primary));
+}
+
+.document-equation {
+  position: relative;
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0;
+  border-radius: 0.4rem;
+  background: hsl(var(--muted) / 0.35);
+  padding: 0.75rem 3rem;
+}
+
+.document-equation .equation-number {
+  position: absolute;
+  right: 1rem;
+  font-family: serif;
+}
+
+.document-text-box {
+  position: relative;
+  box-sizing: border-box;
+  border-radius: 0.35rem;
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.06);
+}
+
+.document-text-box::before {
+  content: "Cuadro de texto";
+  position: absolute;
+  top: -0.65rem;
+  left: 0.5rem;
+  border-radius: 999px;
+  background: var(--document-page-background);
+  padding: 0 0.35rem;
+  color: hsl(var(--muted-foreground));
+  font: 9px/1.2 var(--font-sans);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.document-text-box:hover::before,
+.document-text-box.ProseMirror-selectednode::before,
+.document-text-box:focus-within::before {
+  opacity: 1;
+}
+
+.document-text-box > :first-child {
+  margin-top: 0;
+}
+
+.document-text-box > :last-child {
+  margin-bottom: 0;
+}
+
+.document-text-box-float-left,
+.document-text-box-float-right {
+  clear: none;
+}
+
+.ProseMirror h1[data-outline-number]::before,
+.ProseMirror h2[data-outline-number]::before,
+.ProseMirror h3[data-outline-number]::before,
+.ProseMirror h4[data-outline-number]::before,
+.ProseMirror h5[data-outline-number]::before,
+.ProseMirror h6[data-outline-number]::before {
+  content: attr(data-outline-number) " ";
+}
+
+.ProseMirror table[data-allow-row-break="false"] tr {
+  break-inside: avoid;
+}
+
+.bibliography-field h2 {
+  margin-bottom: 0.75rem;
+}
+
+.bibliography-field .bibliography-entries p {
+  margin: 0 0 0.65rem;
+  padding-left: 1.5rem;
+  text-indent: -1.5rem;
+}
+
+.show-formatting-marks .ProseMirror p:not(.is-editor-empty)::after {
+  content: " ¶";
+  color: hsl(var(--primary) / 0.5);
+  font-family: var(--font-sans);
+}
+
+@media print {
+  .document-ruler,
+  .auto-page-break::after,
+  .manual-page-break > span {
+    display: none !important;
+  }
+
+  .doc-page {
+    border: 0;
+    box-shadow: none;
+    zoom: 1 !important;
+  }
+
+  .auto-page-break,
+  .manual-page-break {
+    height: 0 !important;
+    break-before: page;
+    background: transparent;
+  }
 }
