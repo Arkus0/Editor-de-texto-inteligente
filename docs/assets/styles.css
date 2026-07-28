@@ -927,6 +927,333 @@ footer a:hover {
   font-size: 1.02rem;
 }
 
+/* ---------- Scroll reveal ---------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ---------- Hero screenshot carousel ---------- */
+
+.hero-shot {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  aspect-ratio: 1920 / 1032;
+  background: var(--bg-elevated);
+}
+
+.hero-shot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+
+.hero-shot img.active {
+  opacity: 1;
+}
+
+.hero-shot-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 7px;
+  z-index: 2;
+}
+
+.hero-shot-dots button {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.hero-shot-dots button.active {
+  background: #fff;
+  width: 18px;
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+/* ---------- Screenshot gallery ---------- */
+
+.shots-section {
+  background: var(--bg-soft);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.shots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.shot-card {
+  margin: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: zoom-in;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shot-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-sm);
+}
+
+.shot-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: top center;
+  border-bottom: 1px solid var(--border);
+}
+
+.shot-card figcaption {
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 8, 20, 0.86);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.lightbox.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox img {
+  max-width: min(1160px, 92vw);
+  max-height: 78vh;
+  border-radius: 12px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-caption {
+  color: #fff;
+  opacity: 0.85;
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ---------- Comparison table ---------- */
+
+.compare-wrap {
+  overflow-x: auto;
+}
+
+.compare-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.compare-table th,
+.compare-table td {
+  text-align: left;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.94rem;
+}
+
+.compare-table thead th {
+  background: var(--bg-soft);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.compare-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.compare-table td:first-child {
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.compare-table .col-juord {
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+
+.compare-table th.col-juord {
+  background: var(--primary);
+  color: #fff;
+}
+
+.compare-table td.no {
+  color: var(--text-muted);
+}
+
+.compare-note {
+  max-width: 780px;
+  margin: 22px auto 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+/* ---------- API key providers ---------- */
+
+.api-key-section {
+  background: var(--bg-soft);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.key-providers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  align-items: stretch;
+}
+
+.key-provider {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+}
+
+.key-provider-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.key-provider-head h3 {
+  margin: 0 0 4px;
+  font-size: 1.08rem;
+}
+
+.key-provider-head p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.key-badge {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.key-badge.gemini {
+  background: linear-gradient(135deg, #4285f4, #9b72cb);
+}
+
+.key-badge.openrouter {
+  background: linear-gradient(135deg, #23272f, #6f6f6f);
+}
+
+.key-steps {
+  margin: 0 0 20px;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  flex: 1;
+}
+
+.key-steps li {
+  margin-bottom: 10px;
+}
+
+.key-steps code {
+  background: var(--bg-soft);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.88em;
+  color: var(--text);
+}
+
+.key-provider .btn svg {
+  margin-left: 2px;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 900px) {
@@ -952,6 +1279,14 @@ footer a:hover {
     border-bottom: 1px solid var(--border);
     padding-bottom: 16px;
     margin-bottom: 12px;
+  }
+
+  .shots-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .key-providers {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -1009,5 +1344,24 @@ footer a:hover {
   footer .wrap {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .shots-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .key-providers {
+    grid-template-columns: 1fr;
+  }
+
+
+  .compare-table {
+    min-width: 560px;
+  }
+
+  .compare-table th,
+  .compare-table td {
+    padding: 12px 14px;
+    font-size: 0.88rem;
   }
 }

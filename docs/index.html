@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Juord — el editor de documentos con IA que ya sabes usar</title>
-<meta name="description" content="Juord es un editor de documentos profesional con maquetación tipo Word, compatibilidad DOCX/PDF/ODT y un asistente de IA (Gemini u OpenRouter) que entiende y modifica tu documento. Descarga el instalador o la versión portable para Windows." />
+<meta name="description" content="Juord es un editor de documentos profesional con maquetación tipo Word, compatibilidad DOCX/PDF/ODT y un asistente de IA (Gemini u OpenRouter) que entiende y modifica tu documento. Capturas reales, guía para conseguir tu API key gratis y comparativa con Word." />
 <link rel="icon" href="assets/favicon.ico" />
 <link rel="stylesheet" href="assets/styles.css" />
 </head>
@@ -26,8 +26,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
     <div class="nav-links">
+      <a href="#capturas">Capturas</a>
       <a href="#caracteristicas">Características</a>
-      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#comparativa">Por qué no Word</a>
+      <a href="#conseguir-api-key">Conseguir API key</a>
       <a href="guia.html">Guía de uso</a>
       <a href="#descargas">Descargas</a>
       <a href="https://github.com/Arkus0/Editor-de-texto-inteligente" target="_blank" rel="noopener">GitHub</a>
@@ -51,7 +53,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0 5-5m-5 5-5-5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Descargar para Windows
         </a>
-        <a class="btn btn-ghost" href="guia.html">Ver la guía de uso</a>
+        <a class="btn btn-ghost" href="#capturas">Ver capturas reales</a>
       </div>
       <div class="hero-meta">
         <span>✓ Funciona sin conexión para escribir y maquetar</span>
@@ -64,52 +66,48 @@
       </div>
     </div>
 
-    <div class="mockup" aria-hidden="true">
-      <div class="mockup-bar">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="title">Informe trimestral de resultados — Juord</span>
-      </div>
-      <div class="mockup-ribbon">
-        <span>Archivo</span><span class="active">Inicio</span><span>Insertar</span><span>Diseño</span>
-        <span>Disposición</span><span>Referencias</span><span>Correspondencia</span><span>Revisar</span><span>Vista</span><span>IA</span>
-      </div>
-      <div class="mockup-toolbar">
-        <i></i><i></i><i></i><i style="width:44px"></i><i></i><i></i><i></i>
-      </div>
-      <div class="mockup-body">
-        <div class="mockup-page">
-          <div class="line h w60"></div>
-          <div class="line w40"></div>
-          <div class="line"></div>
-          <div class="line w80"></div>
-          <div class="line w60"></div>
-        </div>
-        <div class="mockup-ai">
-          <div class="ai-head">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z" fill="currentColor"/></svg>
-            Asistente IA
-          </div>
-          <span class="chip on">Escribir</span>
-          <span class="chip">Investigar</span>
-          <span class="chip">Diseñar</span>
-          <span class="chip" style="margin-top:10px">Continuar escribiendo</span>
-          <span class="chip">Resumir</span>
-          <span class="chip">Pulir redacción</span>
-        </div>
-      </div>
+    <div class="hero-shot" id="heroShot" aria-label="Capturas reales de la aplicación Juord">
+      <img src="assets/screenshots/inicio.png" alt="Pantalla de inicio de Juord con plantillas y el panel Redactar con IA" class="active" />
+      <img src="assets/screenshots/ia-escribir.png" alt="Panel del asistente de IA de Juord en modo Escribir" />
+      <img src="assets/screenshots/zotero.png" alt="Panel de Referencias y Zotero de Juord" />
+      <div class="hero-shot-dots" id="heroShotDots"></div>
     </div>
   </div>
 </header>
 
+<section id="capturas" class="shots-section">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <div class="kicker">Sin maquetas, sin renders falsos</div>
+      <h2>Así es Juord por dentro</h2>
+      <p>Capturas reales de la aplicación en Windows 11, sin recortar ni retocar. Iremos ampliando esta galería a medida que la interfaz evolucione. Pulsa cualquiera para verla en grande.</p>
+    </div>
+    <div class="shots-grid">
+      <figure class="shot-card reveal">
+        <img src="assets/screenshots/inicio.png" alt="Pantalla de inicio con plantillas y el panel Redactar con IA" loading="lazy" />
+        <figcaption>Pantalla de inicio: plantillas y redacción con IA en Modo Rápido o Profesional.</figcaption>
+      </figure>
+      <figure class="shot-card reveal">
+        <img src="assets/screenshots/ia-escribir.png" alt="Panel del asistente de IA en modo Escribir con acciones de reescritura" loading="lazy" />
+        <figcaption>Asistente IA, modo Escribir: continuar, resumir, pulir y traducir.</figcaption>
+      </figure>
+      <figure class="shot-card reveal">
+        <img src="assets/screenshots/zotero.png" alt="Panel de Referencias y Zotero con detección de duplicados y estilos CSL" loading="lazy" />
+        <figcaption>Zotero nativo: conecta Zotero Desktop o Zotero.org sin plugins.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
 <section id="como-funciona">
   <div class="wrap">
-    <div class="section-head center">
+    <div class="section-head center reveal">
       <div class="kicker">Cómo funciona</div>
       <h2>Dos formas de trabajar, el mismo documento</h2>
       <p>Empieza sin configurar nada o afina cada parámetro del modelo de IA. Puedes cambiar de modo en cualquier momento sin perder el enunciado ni los archivos adjuntos.</p>
     </div>
     <div class="modes">
-      <div class="mode-card fast">
+      <div class="mode-card fast reveal">
         <span class="tag">Modo Rápido</span>
         <h3>Para no configurar nada</h3>
         <p>Pensado para quien quiere un borrador ya.</p>
@@ -119,7 +117,7 @@
           <li>Edita el resultado o pide cambios por chat.</li>
         </ol>
       </div>
-      <div class="mode-card pro">
+      <div class="mode-card pro reveal">
         <span class="tag">Modo Profesional</span>
         <h3>Control total del resultado</h3>
         <p>El mismo enunciado y los mismos archivos, con más control:</p>
@@ -135,13 +133,13 @@
 
 <section id="ia-modos">
   <div class="wrap">
-    <div class="section-head center">
+    <div class="section-head center reveal">
       <div class="kicker">El asistente de IA</div>
       <h2>La IA no solo escribe por ti</h2>
       <p>El panel del asistente tiene tres modos independientes. Puedes usarlos por separado o combinarlos en el mismo documento.</p>
     </div>
     <div class="modes ia-modes">
-      <div class="mode-card ia-write">
+      <div class="mode-card ia-write reveal">
         <span class="tag">Escribir</span>
         <h3>Redacta y reescribe</h3>
         <p>Genera texto nuevo o transforma el que ya tienes.</p>
@@ -151,7 +149,7 @@
           <li>Traducir y reescribir con vista previa antes de aplicar.</li>
         </ul>
       </div>
-      <div class="mode-card ia-research">
+      <div class="mode-card ia-research reveal">
         <span class="tag">Investigar</span>
         <h3>Busca y verifica</h3>
         <p>La IA sale del documento cuando se lo pides, no antes.</p>
@@ -161,7 +159,7 @@
           <li>Comprueba el cumplimiento de los requisitos del enunciado.</li>
         </ul>
       </div>
-      <div class="mode-card ia-design">
+      <div class="mode-card ia-design reveal">
         <span class="tag">Diseñar</span>
         <h3>Maqueta el documento</h3>
         <p>Acciones nativas revisables, nunca automáticas.</p>
@@ -177,80 +175,80 @@
 
 <section id="caracteristicas">
   <div class="wrap">
-    <div class="section-head center">
+    <div class="section-head center reveal">
       <div class="kicker">Características</div>
       <h2>Docenas de funciones, no solo un editor con IA</h2>
       <p>Con la familiaridad de Word, compatibilidad con muchísimos formatos y funciones pensadas para trabajos académicos, informes y documentos largos.</p>
     </div>
     <div class="features">
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l4 4v14H7z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 12h6M10 15.5h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
         <h3>Compatible con Word, PDF y ODT</h3>
         <p>Abre, edita y exporta DOCX, PDF y OpenDocument conservando estilos, notas, campos, tablas e imágenes.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z" fill="currentColor"/></svg></div>
         <h3>Asistente de IA contextual</h3>
         <p>Redacta, reescribe, resume, traduce e investiga con fuentes. Ve la vista previa antes de aplicar cualquier cambio.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M4 9h16M9 9v11" stroke="currentColor" stroke-width="1.7"/></svg></div>
         <h3>Cinta personalizable</h3>
         <p>Pestañas, orden y grupos configurables con la organización familiar de Word, KeyTips incluidas.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="19" cy="18" r="2" stroke="currentColor" stroke-width="1.7"/></svg></div>
         <h3>Zotero y citas académicas</h3>
         <p>Sincroniza Zotero Desktop o Zotero.org, más de 10.000 estilos CSL y fusión de duplicados campo a campo.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" stroke="currentColor" stroke-width="1.7"/><path d="M9 12.5l2 2 4-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h3>Revisión y control de cambios</h3>
         <p>Comentarios, respuestas, seguimiento de cambios y comparación estructural entre versiones o formatos.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5h6v6H5zM13 5h6v6h-6zM5 13h6v6H5zM13 13h6v6h-6z" stroke="currentColor" stroke-width="1.6"/></svg></div>
         <h3>Tablas y fórmulas</h3>
         <p>Estilos de tabla, ordenación por columna y fórmulas SUM, AVERAGE, COUNT, MIN y MAX exportables a Word y ODT.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19v-3.5L15.5 4 19 7.5 7.5 19H4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
         <h3>Ecuaciones y símbolos</h3>
         <p>LaTeX renderizado con KaTeX, exportado como OMML editable en Word, y galería buscable de símbolos.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
         <h3>Correspondencia en lote</h3>
         <p>Combina un CSV/TSV local con tu plantilla y genera los documentos por intervalos en una pestaña nueva.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg></div>
         <h3>Autoguardado y recuperación</h3>
         <p>Historial de versiones, detección de cambios externos y copia de seguridad antes de sobrescribir.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19v-8a8 8 0 0 1 16 0v8M4 15h4v4H4zM16 15h4v4h-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
         <h3>Corrector y tesauro</h3>
         <p>Autocorrección configurable y tesauros completos de español e inglés, con sustitución en un clic.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h9M4 12h6M4 18h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="19" cy="6" r="2" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="18" r="2" stroke="currentColor" stroke-width="1.6"/></svg></div>
         <h3>Estructura académica</h3>
         <p>Índice dinámico, numeración multinivel, secciones con preliminares romanos y marcadores con referencias cruzadas.</p>
       </div>
 
-      <div class="feature">
+      <div class="feature reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h7v7H4zM13 13h7v7h-7z" stroke="currentColor" stroke-width="1.7"/><path d="M11 8h6M8 16H2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-dasharray="1 3"/></svg></div>
         <h3>Comparación y versiones</h3>
         <p>Compara secuencialmente DOCX, PDF, HTML, Markdown o texto y adopta la versión que prefieras.</p>
@@ -260,43 +258,142 @@
   </div>
 </section>
 
-<section id="guia-rapida">
+<section id="comparativa">
   <div class="wrap">
-    <div class="section-head center">
-      <div class="kicker">Empezar</div>
-      <h2>Configura la IA en tres pasos</h2>
-      <p>No hace falta editar archivos ni usar la terminal. Todo se hace desde Ajustes.</p>
+    <div class="section-head center reveal">
+      <div class="kicker">La pregunta honesta</div>
+      <h2>¿Por qué cambiarte de Word a Juord?</h2>
+      <p>No pretendemos sustituir Word en todo. Estas son las diferencias concretas que sí importan si escribes con ayuda de IA.</p>
     </div>
-    <div class="steps">
-      <div class="step">
-        <h3>Elige proveedor</h3>
-        <p>Abre <strong>Ajustes</strong> y elige Gemini o OpenRouter gratis. La app lo pedirá automáticamente si aún no hay clave.</p>
+    <div class="compare-wrap reveal">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Criterio</th>
+            <th class="col-juord">Juord</th>
+            <th>Word + Microsoft 365</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Precio</td>
+            <td class="col-juord yes">Gratis, sin suscripción</td>
+            <td class="no">Requiere suscripción de Microsoft 365</td>
+          </tr>
+          <tr>
+            <td>Asistente de IA</td>
+            <td class="col-juord yes">Incluido desde el primer día, sin coste añadido</td>
+            <td class="no">Copilot se contrata aparte, como complemento de pago</td>
+          </tr>
+          <tr>
+            <td>Motor de IA</td>
+            <td class="col-juord yes">Eliges el modelo: Gemini con tu clave u OpenRouter gratis</td>
+            <td class="no">Motor cerrado, sin alternativa ni control del modelo</td>
+          </tr>
+          <tr>
+            <td>Dónde vive tu clave y tus datos</td>
+            <td class="col-juord yes">Tu API key y tus documentos, solo en tu equipo</td>
+            <td class="no">Actividad y documentos ligados a tu cuenta y la nube de Microsoft</td>
+          </tr>
+          <tr>
+            <td>Citas y Zotero</td>
+            <td class="col-juord yes">Integración nativa, sin instalar nada más</td>
+            <td class="no">Necesita el complemento oficial de Zotero aparte</td>
+          </tr>
+          <tr>
+            <td>Funciona sin conexión</td>
+            <td class="col-juord yes">Editor, maquetación y exportación 100 % offline</td>
+            <td class="no">Necesita activación y cuenta con conexión periódica</td>
+          </tr>
+          <tr>
+            <td>Código</td>
+            <td class="col-juord yes">Abierto: puedes auditarlo en GitHub</td>
+            <td class="no">Propietario y cerrado</td>
+          </tr>
+          <tr>
+            <td>Acciones de la IA sobre tu documento</td>
+            <td class="col-juord yes">Se muestran como propuesta y solo se aplican si las confirmas</td>
+            <td class="no">Varía según el complemento y la versión</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="compare-note reveal">
+      Word sigue siendo el estándar en muchas oficinas y es la opción correcta si ya pagas Microsoft 365 y no
+      necesitas IA. Juord tiene sentido si quieres compatibilidad real con DOCX sin pagar una suscripción, y si
+      prefieres decidir tú qué modelo de IA usa tu documento y dónde vive tu clave.
+    </p>
+  </div>
+</section>
+
+<section id="conseguir-api-key" class="api-key-section">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <div class="kicker">Empezar con la IA</div>
+      <h2>Cómo conseguir tu API key gratis</h2>
+      <p>Elige un proveedor. Los dos tienen un nivel gratuito y no piden tarjeta de crédito para empezar. Tardas menos de dos minutos.</p>
+    </div>
+
+    <div class="key-providers">
+      <div class="key-provider reveal">
+        <div class="key-provider-head">
+          <span class="key-badge gemini">G</span>
+          <div>
+            <h3>Gemini (Google AI Studio)</h3>
+            <p>Recomendado: el modelo con más calidad para documentos largos.</p>
+          </div>
+        </div>
+        <ol class="key-steps">
+          <li>Entra en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li>
+          <li>Pulsa <strong>Create API key</strong>. No pide tarjeta: el nivel gratuito incluye una cuota diaria de peticiones.</li>
+          <li>Copia la clave (empieza por <code>AIza…</code>).</li>
+          <li>En Juord, abre <strong>Ajustes de IA → Gemini</strong>, pégala y pulsa <strong>Guardar y comprobar</strong>.</li>
+        </ol>
+        <a class="btn btn-ghost btn-block" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">
+          Abrir Google AI Studio
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
       </div>
-      <div class="step">
-        <h3>Pega tu API key</h3>
-        <p>Crea una clave gratuita en Google AI Studio u OpenRouter y pégala. Se guarda solo en tu perfil local, nunca en los documentos.</p>
-      </div>
-      <div class="step">
-        <h3>Guarda y comprueba</h3>
-        <p>La aplicación prueba la conexión antes de activarla. Con OpenRouter se evita cualquier modelo de pago automáticamente.</p>
+
+      <div class="key-provider reveal">
+        <div class="key-provider-head">
+          <span class="key-badge openrouter">OR</span>
+          <div>
+            <h3>OpenRouter gratis</h3>
+            <p>Alternativa sin depender de una cuenta de Google, con modelos <code>:free</code>.</p>
+          </div>
+        </div>
+        <ol class="key-steps">
+          <li>Crea una cuenta gratuita en <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">openrouter.ai/settings/keys</a>.</li>
+          <li>Pulsa <strong>Create Key</strong>, ponle un nombre y confirma.</li>
+          <li>Copia la clave (empieza por <code>sk-or-…</code>).</li>
+          <li>En Juord, abre <strong>Ajustes de IA → OpenRouter gratis</strong> y pégala. La app elige automáticamente un modelo <code>:free</code> y bloquea los de pago.</li>
+        </ol>
+        <a class="btn btn-ghost btn-block" href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">
+          Abrir OpenRouter
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
       </div>
     </div>
-    <div style="text-align:center; margin-top:34px">
-      <a class="btn btn-ghost" href="guia.html">Leer la guía completa →</a>
-    </div>
+
+    <p class="compare-note reveal">
+      La clave se guarda cifrada en el perfil local de la aplicación, nunca dentro de los documentos ni en ningún
+      servidor propio. Puedes eliminarla en cualquier momento desde Ajustes. Zotero también admite una API key
+      opcional propia: se explica paso a paso en la <a href="guia.html#zotero">guía de uso</a>.
+    </p>
   </div>
 </section>
 
 <section id="descargas">
   <div class="wrap">
-    <div class="section-head center">
+    <div class="section-head center reveal">
       <div class="kicker">Descargas</div>
       <h2>Descarga Juord</h2>
       <p>Disponible para Windows 10/11 de 64 bits. Elige instalador si quieres accesos directos y actualizaciones sencillas, o portable si prefieres ejecutarlo sin instalar.</p>
     </div>
 
     <div class="downloads">
-      <div class="download-card recommended">
+      <div class="download-card recommended reveal">
         <span class="badge">Recomendado</span>
         <div class="icon-row">
           <span class="icn"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0 5-5m-5 5-5-5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
@@ -313,7 +410,7 @@
         <a class="btn btn-primary btn-block" href="https://github.com/Arkus0/Editor-de-texto-inteligente/releases/download/v0.9.0/Editor-Inteligente-IA-Setup.exe">Descargar instalador</a>
       </div>
 
-      <div class="download-card">
+      <div class="download-card reveal">
         <div class="icon-row">
           <span class="icn"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
           <div>
@@ -343,11 +440,11 @@
 
 <section>
   <div class="wrap">
-    <div class="section-head center">
+    <div class="section-head center reveal">
       <div class="kicker">Preguntas frecuentes</div>
       <h2>Antes de empezar</h2>
     </div>
-    <div class="faq">
+    <div class="faq reveal">
       <details>
         <summary>¿Es gratis?</summary>
         <p>Sí. La aplicación es gratuita. La IA usa tu propia API key de Gemini (con cuota gratuita en Google AI Studio) o el enrutador gratuito de OpenRouter, así que no pagas nada a través de la app.</p>
@@ -355,6 +452,10 @@
       <details>
         <summary>¿Necesito una API key para usarlo?</summary>
         <p>Solo si quieres usar el asistente de IA. El editor, la maquetación, la exportación DOCX/PDF/ODT y Zotero funcionan sin ninguna clave ni conexión a internet.</p>
+      </details>
+      <details>
+        <summary>¿Dónde consigo la API key?</summary>
+        <p>En <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> para Gemini o en <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">OpenRouter</a> para el enrutador gratuito. El paso a paso con capturas está en la sección <a href="#conseguir-api-key">Cómo conseguir tu API key gratis</a> de esta misma página.</p>
       </details>
       <details>
         <summary>¿Qué diferencia hay entre el instalador y el portable?</summary>
@@ -374,7 +475,7 @@
 
 <section>
   <div class="wrap">
-    <div class="cta-band">
+    <div class="cta-band reveal">
       <h2>Prueba Juord hoy mismo</h2>
       <p>Instálalo en un minuto y empieza a escribir con ayuda de la IA, a tu ritmo.</p>
       <div class="hero-ctas" style="justify-content:center">
@@ -397,6 +498,14 @@
   </div>
 </footer>
 
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Cerrar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <img src="" alt="" id="lightboxImg" />
+  <p class="lightbox-caption" id="lightboxCaption"></p>
+</div>
+
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
   var toggle = document.getElementById('navToggle');
@@ -413,6 +522,75 @@
       });
     });
   }
+
+  // Scroll-reveal animations
+  var revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry, i) {
+        if (entry.isIntersecting) {
+          entry.target.style.transitionDelay = (Math.min(i, 4) * 0.06) + 's';
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add('in-view'); });
+  }
+
+  // Hero screenshot crossfade carousel
+  (function () {
+    var shot = document.getElementById('heroShot');
+    if (!shot) return;
+    var imgs = shot.querySelectorAll('img');
+    var dotsWrap = document.getElementById('heroShotDots');
+    var idx = 0;
+    imgs.forEach(function (_, i) {
+      var dot = document.createElement('button');
+      dot.setAttribute('aria-label', 'Ver captura ' + (i + 1));
+      if (i === 0) dot.classList.add('active');
+      dot.addEventListener('click', function () { show(i); restart(); });
+      dotsWrap.appendChild(dot);
+    });
+    var dots = dotsWrap.querySelectorAll('button');
+    function show(i) {
+      imgs[idx].classList.remove('active');
+      dots[idx].classList.remove('active');
+      idx = i;
+      imgs[idx].classList.add('active');
+      dots[idx].classList.add('active');
+    }
+    var timer;
+    function restart() {
+      clearInterval(timer);
+      timer = setInterval(function () { show((idx + 1) % imgs.length); }, 3800);
+    }
+    restart();
+  })();
+
+  // Gallery lightbox
+  (function () {
+    var lightbox = document.getElementById('lightbox');
+    var lightboxImg = document.getElementById('lightboxImg');
+    var lightboxCaption = document.getElementById('lightboxCaption');
+    var closeBtn = document.getElementById('lightboxClose');
+    document.querySelectorAll('.shot-card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        var img = card.querySelector('img');
+        var caption = card.querySelector('figcaption');
+        lightboxImg.src = img.src;
+        lightboxImg.alt = img.alt;
+        lightboxCaption.textContent = caption ? caption.textContent : '';
+        lightbox.classList.add('open');
+      });
+    });
+    function close() { lightbox.classList.remove('open'); }
+    closeBtn.addEventListener('click', close);
+    lightbox.addEventListener('click', function (e) { if (e.target === lightbox) close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  })();
 </script>
 
 </body>

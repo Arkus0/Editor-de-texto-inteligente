@@ -111,12 +111,22 @@
       </p>
 
       <h2 id="configurar-ia">Configurar la IA</h2>
-      <p>No hay que editar archivos ni usar la terminal:</p>
+      <p>No hay que editar archivos ni usar la terminal. Elige un proveedor, consigue una clave gratuita y pégala en Ajustes.</p>
+
+      <h3>Opción A: Gemini (Google AI Studio)</h3>
       <ol>
-        <li>Abre <strong>Ajustes</strong>. Si todavía no hay clave, la aplicación lo abre automáticamente.</li>
-        <li>Elige <strong>Gemini</strong> o <strong>OpenRouter gratis</strong>.</li>
-        <li>Crea una API Key en Google AI Studio u OpenRouter y pégala.</li>
-        <li>Pulsa <strong>Guardar y comprobar</strong>.</li>
+        <li>Entra en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li>
+        <li>Pulsa <strong>Create API key</strong>. No pide tarjeta de crédito: el nivel gratuito incluye una cuota diaria de peticiones.</li>
+        <li>Copia la clave (empieza por <code>AIza…</code>).</li>
+        <li>En Juord, abre <strong>Ajustes → IA → Gemini</strong>, pégala y pulsa <strong>Guardar y comprobar</strong>.</li>
+      </ol>
+
+      <h3>Opción B: OpenRouter gratis</h3>
+      <ol>
+        <li>Crea una cuenta gratuita en <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">openrouter.ai/settings/keys</a>.</li>
+        <li>Pulsa <strong>Create Key</strong>, ponle un nombre y confirma.</li>
+        <li>Copia la clave (empieza por <code>sk-or-…</code>).</li>
+        <li>En Juord, abre <strong>Ajustes → IA → OpenRouter gratis</strong> y pégala.</li>
       </ol>
       <p>
         Con OpenRouter, la opción predeterminada es <code>openrouter/free</code>: la app consulta el catálogo y
@@ -125,10 +135,17 @@
         en <code>:free</code>. Cualquier identificador de pago se sustituye automáticamente por
         <code>openrouter/free</code> para evitar cargos accidentales.
       </p>
+      <div class="callout">
+        <p>
+          Si todavía no hay ninguna clave guardada, Juord abre este mismo panel de Ajustes automáticamente la
+          primera vez que pulsas una acción de IA, así que no hace falta buscarlo a propósito.
+        </p>
+      </div>
       <p>
-        La aplicación prueba la conexión antes de activarla. Las claves se guardan en el perfil local de la
-        aplicación y nunca dentro de los documentos. Los modelos gratuitos tienen límites diarios y su
-        disponibilidad puede variar según el proveedor.
+        La aplicación prueba la conexión antes de activarla. Las claves se guardan cifradas en el perfil local de
+        la aplicación y nunca dentro de los documentos ni en ningún servidor propio; puedes eliminarlas en
+        cualquier momento desde Ajustes. Los modelos gratuitos tienen límites diarios y su disponibilidad puede
+        variar según el proveedor.
       </p>
 
       <h2 id="zotero">Conectar Zotero</h2>
@@ -140,8 +157,9 @@
           otras aplicaciones.
         </li>
         <li>
-          Para Zotero.org, pulsa <strong>Crear API Key en Zotero</strong>, pega la clave y pulsa
-          <strong>Guardar y conectar</strong>.
+          Para Zotero.org, pulsa <strong>Crear API Key en Zotero</strong> (abre
+          <a href="https://www.zotero.org/settings/keys/new" target="_blank" rel="noopener">zotero.org/settings/keys/new</a>
+          con los permisos de lectura ya marcados), pega la clave y pulsa <strong>Guardar y conectar</strong>.
         </li>
         <li>Elige biblioteca y colección, busca, selecciona e importa.</li>
         <li>Usa <strong>Sincronizar cambios desde la última versión</strong> para actualizar lo ya importado.</li>
